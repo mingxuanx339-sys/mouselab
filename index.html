@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101715">
+  <meta name="description" content="MouseLab 鼠标 A/B 点击实验：对比次数、点击间隔与按住时长，数据仅存本机。不是硬件触发延迟测试。">
+  <title data-i18n="title">MouseLab — 鼠标点击实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/ab-app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <span class="wordmark"><span class="wordmark-icon" aria-hidden="true">M</span>Mouse<span class="muted">Lab</span></span>
+    <div class="header-actions"><select id="lang-select" aria-label="语言" data-i18n-attr="aria-label:langLabel"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option></select><button id="recording-mode" type="button" class="button button-secondary" aria-pressed="false" data-i18n="recMode">录屏视图</button></div>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">MOUSELAB / CLICK A/B</p>
+      <h1><span class="h1-plain" data-i18n="h1a">两只鼠标，</span><span data-i18n="h1b">同一个你。</span></h1>
+      <p class="intro-copy" data-i18n="introCopy">不只看点了多少次，也看点击间隔与按住时长。固定时间、交替测试，让每一轮都有记录。</p>
+      <p class="measurement-limit" data-i18n="limit">这是个人点击表现测试，不是硬件触发延迟测试。网页没有记录物理动作起点，任何毫秒数都不能解释为微动响应速度。</p>
+    </section>
+    <section id="setup" class="test-card setup-card" aria-labelledby="setup-heading">
+      <p class="eyebrow" data-i18n="setupEyebrow">01 / 准备</p><h2 id="setup-heading" data-i18n="setupH">先给两只鼠标命名</h2>
+      <div class="setup-grid">
+        <label class="device-A"><span data-i18n="labelA">A · 鼠标名称</span><input id="mouse-a" data-i18n-attr="placeholder:namePh" type="text" maxlength="60" autocomplete="off"></label>
+        <label class="device-B"><span data-i18n="labelB">B · 鼠标名称</span><input id="mouse-b" data-i18n-attr="placeholder:namePh" type="text" maxlength="60" autocomplete="off"></label>
+      </div>
+      <div class="settings-grid">
+        <label><span data-i18n="durLabel">每轮时长</span><select id="duration-setting"><option value="5" data-i18n="s5">5 秒</option><option value="10" selected data-i18n="s10">10 秒 · 推荐</option><option value="15" data-i18n="s15">15 秒</option></select></label>
+        <label><span data-i18n="roundsLabel">每只鼠标轮数</span><select id="round-setting"><option value="3" data-i18n="r3">3 轮</option><option value="5" selected data-i18n="r5">5 轮 · 推荐</option><option value="10" data-i18n="r10">10 轮</option></select></label>
+        <label><span data-i18n="restLabel">轮间休息</span><select id="rest-setting"><option value="10" data-i18n="rest10">10 秒</option><option value="20" selected data-i18n="rest20">20 秒 · 推荐</option><option value="30" data-i18n="rest30">30 秒</option></select></label>
+      </div>
+      <label class="notes-label"><span data-i18n="notesLabel">测试备注</span><textarea id="setup-notes" data-i18n-attr="placeholder:notesPh" rows="2" maxlength="500" placeholder="填写回报率、连接方式、触发 / 复位设置、手指及姿势、浏览器 / 显示器设置……"></textarea></label>
+      <p class="detail-copy" data-i18n="detail">先用两只鼠标各热身一次。每轮使用同一手指与姿势，固定测试设置。第一轮开始后锁定设置；更改条件请开始新对比。</p>
+      <details class="protocol"><summary data-i18n="protoSum">测试顺序与记录方式</summary><p data-i18n="proto1">每两轮组成一对，顺序交替为 A→B、B→A，降低顺序影响。鼠标由你手动切换，网页不会识别具体设备。完整的零点击轮次也会保留。</p><p id="order-plan"></p><p data-i18n="proto2">结果自动保存在本浏览器；不上传。清除浏览器数据会丢失记录，请及时导出。准备或测试中刷新会标记本轮中断。</p></details>
+    </section>
+    <section class="test-card capture-card" aria-labelledby="test-heading">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="capEyebrow">02 / 连续点击</p><h2 id="test-heading"><span id="next-device">A</span></h2></div><span id="test-status" class="status" role="status" aria-live="polite" data-i18n="statusReady">准备就绪</span></div>
+      <div class="controls"><button id="start-button" class="button button-primary" type="button">准备测试 A（3 秒倒计时）</button><button id="stop-button" class="button button-secondary" type="button" disabled data-i18n="stopBtn">中断本轮</button><span id="round-progress" class="controls-hint">0 / 10 轮完成</span></div>
+      <div id="test-area" class="test-area click-pad" tabindex="0" aria-label="连续点击区域，倒计时结束后使用鼠标左键点击" data-i18n-attr="aria-label:areaAria">
+        <strong id="area-count" class="pad-number">GO</strong>
+        <p id="area-title" class="area-title" data-i18n="areaIdle">从上方按钮开始下一轮</p>
+        <p id="area-hint" class="area-hint" data-i18n="hintIdle">本轮结束后自动保存，再换另一只鼠标</p>
+      </div>
+      <progress id="time-progress" max="1" value="0" aria-label="本轮计时进度" data-i18n-attr="aria-label:progAria"></progress>
+      <div class="live-grid">
+        <article class="metric"><span class="metric-label" data-i18n="timeLeft">剩余时间</span><strong id="time-left" class="metric-value">10.0</strong><span class="metric-unit" data-i18n="timeUnit">秒 · 到时自动停止</span></article>
+        <article class="metric"><span class="metric-label" data-i18n="clicksL">主键点击</span><strong id="live-clicks" class="metric-value">0</strong><span class="metric-unit" data-i18n="clicksUnit">次按下事件</span></article>
+        <article class="metric"><span class="metric-label" data-i18n="cpsL">当前速度</span><strong id="live-cps" class="metric-value">—</strong><span class="metric-unit" data-i18n="cpsUnit">CPS · 每秒点击数</span></article>
+      </div>
+      <p id="session-notice" class="session-notice" role="status" aria-live="polite"></p>
+    </section>
+    <section class="test-card comparison-card" aria-labelledby="comparison-heading">
+      <p class="eyebrow" data-i18n="resEyebrow">03 / 结果</p><h2 id="comparison-heading" data-i18n="resH">保留全部轮次，再看整体表现</h2>
+      <div class="metric-definitions"><p><strong data-i18n="t1">点击间隔：</strong><span data-i18n="d1">相邻两次按下的间隔，描述点击节奏。</span></p><p><strong data-i18n="t2">按住时长：</strong><span data-i18n="d2">一次按下到松开的时长，不是触发延迟。</span></p><p><strong data-i18n="t3">P95 间隔：</strong><span data-i18n="d3">95% 的有效间隔不超过此值，用来观察较慢的点击间隔；越小不等于硬件延迟越低。</span></p></div>
+      <div class="comparison-grid">
+        <article class="comparison-device device-A"><span class="eyebrow">MOUSE A</span><h3 id="name-A">鼠标 A</h3><strong id="score-A" class="comparison-score">—</strong><span class="metric-label" data-i18n="medCps">CPS 中位数</span><p id="rounds-A">0 轮纳入汇总</p><dl><div><dt data-i18n="dtRange">每轮 CPS 范围</dt><dd id="range-A">—</dd></div><div><dt data-i18n="dtInt">点击间隔中位数¹</dt><dd id="interval-A">—</dd></div><div><dt data-i18n="dtHold">按住时长中位数¹</dt><dd id="hold-A">—</dd></div></dl></article>
+        <article class="comparison-device device-B"><span class="eyebrow">MOUSE B</span><h3 id="name-B">鼠标 B</h3><strong id="score-B" class="comparison-score">—</strong><span class="metric-label" data-i18n="medCps">CPS 中位数</span><p id="rounds-B">0 轮纳入汇总</p><dl><div><dt data-i18n="dtRange">每轮 CPS 范围</dt><dd id="range-B">—</dd></div><div><dt data-i18n="dtInt">点击间隔中位数¹</dt><dd id="interval-B">—</dd></div><div><dt data-i18n="dtHold">按住时长中位数¹</dt><dd id="hold-B">—</dd></div></dl></article>
+      </div>
+      <p id="comparison-note" class="comparison-note"></p>
+      <p class="detail-copy" data-i18n="foot1">¹ 先求每轮中位数，再取这些中位数的中位数。按住时长只使用测试窗口内完整的按下 / 松开配对；CPS 按完整固定时长计算。</p>
+      <div class="table-scroll"><table><caption data-i18n="caption">每轮原始成绩（按测试顺序，包含中断 / 排除记录）</caption><thead><tr><th scope="col" data-i18n="thRound">轮次</th><th scope="col" data-i18n="thMouse">鼠标</th><th scope="col" data-i18n="thClicks">点击</th><th scope="col">CPS</th><th scope="col" data-i18n="thInt">间隔 ms</th><th scope="col" data-i18n="thHold">按住 ms</th><th scope="col" data-i18n="thStatus">状态</th></tr></thead><tbody id="round-rows"></tbody></table></div>
+      <p id="empty-results" class="empty-state" data-i18n="empty">完成第一轮后，成绩会出现在这里。</p>
+      <div class="export-actions"><button id="export-image" class="button button-primary" type="button" disabled data-i18n="exPng">保存对比图 PNG</button><button id="export-json" class="button button-secondary" type="button" disabled data-i18n="exJson">完整记录 JSON</button><button id="export-csv" class="button button-secondary" type="button" disabled data-i18n="exCsv">每轮成绩 CSV</button><button id="new-button" class="button button-secondary" type="button" data-i18n="newBtn">开始新对比</button></div>
+    </section>
+    <section class="notes"><h2 data-i18n="notesH">让结果能被正确理解</h2><p data-i18n="n1">固定回报率、连接方式、触发 / 复位 / 反馈设置、手指与姿势。每只至少完成 3 轮，保留全部有效轮次；不要只选最好的一轮。</p><p data-i18n="n2">网页不会识别实际鼠标型号或自动核验回报率。请手动切换鼠标，避免其他鼠标误操作。外形、行程、力度、熟练度与浏览器调度都可能影响结果。</p><p data-i18n="n3">需要更详细的逐次记录时，导出完整 JSON；CSV 保留每轮次数、点击间隔中位数、P95 间隔与按住时长。数据保存在你自己的浏览器，不收集、不上传实验记录。</p><p><span data-i18n="n4a">这是我们搭建的 MouseLab 工具，不是鼠标厂商官方软件或实验室认证。</span><a href="./legacy.html" data-i18n="n4link">旧版移动事件页面</a><span data-i18n="n4b">同样不测硬件延迟。</span></p></section>
+  </main>
+  <footer class="site-footer" data-i18n="footer">本机保存 · 用户主动导出 · 个人点击表现，不代表微动硬件延迟</footer>
+  <noscript data-i18n="noscript">请启用浏览器 JavaScript 才能开始测试。</noscript>
+</body>
+</html>

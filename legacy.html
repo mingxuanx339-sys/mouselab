@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101715">
+    <meta name="description" content="在浏览器中比较鼠标点击节奏、按住时长与事件稳定性。">
+    <title>Mouse Feel Score — 鼠标点击对比</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="Mouse Feel Score 首页">
+        <span class="wordmark-icon" aria-hidden="true">M</span>
+        <span>Mouse Feel <span class="muted">Score</span></span>
+      </a>
+      <span class="header-note">免费 · 本地运行 · 无需注册</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">BROWSER INPUT CHECK</p>
+        <h1 id="page-title">比较你的点击，<span>而非猜测延迟。</span></h1>
+        <p class="intro-copy">用相同操作分别测试电子微动和传统机械微动，查看网页实际收到的主键点击节奏、按住时长与事件稳定性。</p>
+        <p class="measurement-limit"><strong>测量范围：</strong>此页面不测真实物理触发延迟、USB 回报率或游戏端到端延迟；它只比较浏览器交付事件的可观测特征。</p>
+      </section>
+
+      <section class="test-card" aria-labelledby="test-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">01 / INPUT CAPTURE</p>
+            <h2 id="test-heading">点击对比采集</h2>
+          </div>
+          <p id="test-status" class="status" role="status" aria-live="polite">尚未开始</p>
+        </div>
+
+        <div class="controls">
+          <button id="start-button" class="button button-primary" type="button">开始测试</button>
+          <button id="stop-button" class="button button-secondary" type="button" disabled>结束测试</button>
+          <span class="controls-hint">开始后，在下方区域连续点击主键；每只鼠标建议做 3 轮，每轮至少 20 次。</span>
+        </div>
+
+        <div id="test-area" class="test-area" aria-label="鼠标测试区域">
+          <span class="target-ring" aria-hidden="true"></span>
+          <span class="target-crosshair" aria-hidden="true">+</span>
+          <p class="area-title">在此区域连续点击</p>
+          <p class="area-hint">记录本区域收到的移动、按下和松开事件；主键指标只统计左键</p>
+        </div>
+
+        <div class="click-metrics" aria-label="主键点击统计">
+          <article class="metric">
+            <span class="metric-label">主键点击</span>
+            <strong id="click-count" class="metric-value">—</strong>
+            <span class="metric-unit">次按下事件</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">点击间隔中位数</span>
+            <strong id="click-median" class="metric-value">—</strong>
+            <span class="metric-unit">毫秒 / 相邻按下</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">点击间隔第 95 百分位</span>
+            <strong id="click-p95" class="metric-value">—</strong>
+            <span class="metric-unit">毫秒 / 相邻按下</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">按住时长中位数</span>
+            <strong id="click-hold" class="metric-value">—</strong>
+            <span class="metric-unit">毫秒 / 按下至松开</span>
+          </article>
+        </div>
+
+        <div class="metrics-grid" aria-label="测试统计">
+          <article class="metric">
+            <span class="metric-label">移动事件</span>
+            <strong id="sample-count" class="metric-value">—</strong>
+            <span class="metric-unit">个浏览器事件</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">测试时长</span>
+            <strong id="duration" class="metric-value">—</strong>
+            <span class="metric-unit">秒</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">间隔中位数</span>
+            <strong id="median-interval" class="metric-value">—</strong>
+            <span class="metric-unit">毫秒 / 相邻移动事件</span>
+          </article>
+          <article class="metric">
+            <span class="metric-label">间隔第 95 百分位</span>
+            <strong id="p95-interval" class="metric-value">—</strong>
+            <span class="metric-unit">毫秒 / 相邻移动事件</span>
+          </article>
+        </div>
+
+        <div class="detail-row">
+          <p id="interval-details" class="detail-copy">平均间隔、最小值和最大值会在测试后显示。</p>
+          <div class="export-actions">
+            <button id="export-json" class="button button-export" type="button" disabled>导出 JSON</button>
+            <button id="export-csv" class="button button-export" type="button" disabled>导出 CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="quality-card" aria-labelledby="quality-heading">
+        <div>
+          <p class="eyebrow">02 / DATA QUALITY</p>
+          <h2 id="quality-heading">数据质量提示</h2>
+        </div>
+        <ul id="quality-list" class="quality-list" aria-live="polite">
+          <li>开始测试后，这里会根据样本数、时长和页面可见性显示提示。</li>
+        </ul>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">如何理解结果</h2>
+        <p>主键点击间隔指相邻左键按下事件之间的时间；按住时长指一次左键按下到松开的时间。它们主要反映测试操作和浏览器事件传递，不能代表开关本身的快慢。</p>
+        <p>公平对比方式：固定鼠标垫、USB 端口/接收器、系统设置、浏览器、手势和轮数；分别导出每一轮，再比较同一指标的中位数和波动。不要将网页结果称为硬件点击延迟。</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Mouse Feel Score <span class="muted">·</span> 浏览器可观测数据，不代表硬件规格</span>
+    </footer>
+  </body>
+</html>
