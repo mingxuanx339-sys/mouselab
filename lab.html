@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101715">
+  <meta name="description" content="不用专业仪器，在浏览器里测鼠标回报率、DPI 准确度、加速度、静止抖动、直线修正、按键双击、滚轮跳格和端到端点击延迟。">
+  <title>MouseLab — 传感器与响应实验室</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/lab-app.js"></script>
+</head>
+<body class="lab-page">
+  <header class="site-header">
+    <a class="wordmark" href="./index.html"><span class="wordmark-icon" aria-hidden="true">M</span>Mouse<span class="muted">Lab</span></a>
+    <div class="header-actions"><a class="nav-link" href="./index.html" data-i18n="navAb">A/B 点击测试</a><select id="lang-select" aria-label="语言" data-i18n-attr="aria-label:langLabel"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option></select></div>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">MOUSELAB / SENSOR &amp; RESPONSE</p>
+      <h1><span class="h1-plain" data-i18n="labH1a">不用仪器，</span><span data-i18n="labH1b">把鼠标测透。</span></h1>
+      <p class="intro-copy" data-i18n="labIntro">7 项测试只需要浏览器和手边的东西。</p>
+      <p class="measurement-limit" data-i18n="labLimit">网页只能看到浏览器收到的事件。</p>
+      <nav class="lab-nav" aria-labelledby="lab-nav-label"><span id="lab-nav-label" class="eyebrow" data-i18n="labNav">测试目录</span>
+        <a href="#t1">1 · <span data-i18n="nav1">回报率</span></a><a href="#t2">2 · <span data-i18n="nav2">DPI 准确度</span></a><a href="#t3">3 · <span data-i18n="nav3">加速度</span></a><a href="#t4">4 · <span data-i18n="nav4">静止抖动</span></a><a href="#t5">5 · <span data-i18n="nav5">直线</span></a><a href="#t6">6 · <span data-i18n="nav6">按键与滚轮</span></a><a href="#t7">7 · <span data-i18n="nav7">点击延迟</span></a>
+      </nav>
+    </section>
+
+    <section class="test-card" aria-labelledby="setup-h">
+      <p class="eyebrow" data-i18n="setupEye">00 / 准备</p><h2 id="setup-h" data-i18n="setupH2">当前测试的鼠标</h2>
+      <div class="settings-grid">
+        <label><span data-i18n="lMouseName">鼠标名称</span><input id="mouse-name" type="text" maxlength="60" autocomplete="off" data-i18n-attr="placeholder:lMousePh"></label>
+        <label><span data-i18n="lSetDpi">驱动里设置的 DPI</span><input id="set-dpi" type="number" min="50" max="64000" step="50" value="800"></label>
+        <label><span data-i18n="lSetHz">驱动里设置的回报率 (Hz)</span><select id="set-hz"><option value="">—</option><option>125</option><option>250</option><option>500</option><option selected>1000</option><option>2000</option><option>4000</option><option>8000</option></select></label>
+      </div>
+      <p class="detail-copy" data-i18n="lSetupNote">换鼠标时先改名称。</p>
+    </section>
+
+    <section id="t1" class="test-card lab-card" aria-labelledby="t1-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p1Eye">01 / 回报率</p><h2 id="t1-h" data-i18n="p1H">实际回报率和稳定性</h2></div><span id="t1-status" class="status" role="status" data-i18n="stIdle">未开始</span></div>
+      <p class="lab-how" data-i18n="p1How"></p>
+      <div class="controls"><button id="t1-start" class="button button-primary" type="button" data-i18n="bStart">开始</button><button id="t1-stop" class="button button-secondary" type="button" disabled data-i18n="bStop">停止</button></div>
+      <div id="t1-area" class="test-area lab-area"><strong id="t1-live" class="pad-number">—</strong><p id="t1-msg" class="area-hint" data-i18n="p1Area"></p></div>
+      <canvas id="t1-chart" class="lab-chart" width="960" height="140" aria-hidden="true"></canvas>
+      <div class="lab-metrics">
+        <article class="metric"><span class="metric-label" data-i18n="mAvgHz">平均回报率</span><strong id="t1-avg" class="metric-value">—</strong><span class="metric-unit" data-i18n="uHz"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mNominal">最接近的档位</span><strong id="t1-nom" class="metric-value">—</strong><span class="metric-unit" data-i18n="uNominal"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mStab">稳定性</span><strong id="t1-stab" class="metric-value">—</strong><span class="metric-unit" data-i18n="uStab"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mMethod">采集方式</span><strong id="t1-method" class="metric-value metric-text">—</strong><span id="t1-events" class="metric-unit"></span></article>
+      </div>
+      <p id="t1-verdict" class="lab-verdict" role="status"></p>
+      <p class="detail-copy" data-i18n="p1Note"></p>
+    </section>
+
+    <section id="t2" class="test-card lab-card" aria-labelledby="t2-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p2Eye">02 / DPI 准确度</p><h2 id="t2-h" data-i18n="p2H">实际 DPI 和标称值差多少</h2></div><span id="t2-status" class="status" role="status" data-i18n="stIdle">未开始</span></div>
+      <p class="lab-how" data-i18n="p2How"></p>
+      <div class="controls"><label class="inline-label"><span data-i18n="lDistance">移动距离 (cm)</span><input id="t2-dist" type="number" min="2" max="40" step="0.5" value="10"></label><button id="t2-start" class="button button-primary" type="button" data-i18n="bStart">开始</button><button id="t2-reset" class="button button-secondary" type="button" data-i18n="bReset">清空</button></div>
+      <div id="t2-area" class="test-area lab-area"><strong id="t2-live" class="pad-number">0</strong><p id="t2-msg" class="area-hint" data-i18n="p2Area"></p></div>
+      <div class="lab-metrics">
+        <article class="metric"><span class="metric-label" data-i18n="mCpi">实测 DPI</span><strong id="t2-cpi" class="metric-value">—</strong><span class="metric-unit" data-i18n="uCpi"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mDev">与设置值偏差</span><strong id="t2-dev" class="metric-value">—</strong><span class="metric-unit" data-i18n="uDev"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mTrials">有效次数</span><strong id="t2-n" class="metric-value">0</strong><span class="metric-unit" data-i18n="uTrials"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mRaw">原始输入</span><strong id="t2-raw" class="metric-value metric-text">—</strong><span class="metric-unit"></span></article>
+      </div>
+      <div class="table-scroll lab-table"><table><thead><tr><th scope="col" data-i18n="thRun">次数</th><th scope="col" data-i18n="thCounts">计数</th><th scope="col">DPI</th><th scope="col" data-i18n="thDev">偏差</th></tr></thead><tbody id="t2-rows"></tbody></table></div>
+      <p class="detail-copy" data-i18n="p2Note"></p>
+    </section>
+
+    <section id="t3" class="test-card lab-card" aria-labelledby="t3-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p3Eye">03 / 加速度</p><h2 id="t3-h" data-i18n="p3H">快推和慢推，计数一样吗</h2></div><span id="t3-status" class="status" role="status" data-i18n="stIdle">未开始</span></div>
+      <p class="lab-how" data-i18n="p3How"></p>
+      <div class="controls"><button id="t3-start" class="button button-primary" type="button" data-i18n="bStart">开始</button></div>
+      <div id="t3-area" class="test-area lab-area"><strong id="t3-live" class="pad-number">0</strong><p id="t3-msg" class="area-hint" data-i18n="p3Area"></p></div>
+      <div class="lab-metrics">
+        <article class="metric"><span class="metric-label" data-i18n="mSlow">慢推平均计数</span><strong id="t3-slow" class="metric-value">—</strong><span id="t3-slow-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mFast">快推平均计数</span><strong id="t3-fast" class="metric-value">—</strong><span id="t3-fast-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mAccel">快慢差异</span><strong id="t3-diff" class="metric-value">—</strong><span class="metric-unit" data-i18n="uAccel"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mCv">离散度</span><strong id="t3-cv" class="metric-value">—</strong><span class="metric-unit" data-i18n="uCv"></span></article>
+      </div>
+      <p id="t3-verdict" class="lab-verdict" role="status"></p>
+      <p class="detail-copy" data-i18n="p3Note"></p>
+    </section>
+
+    <section id="t4" class="test-card lab-card" aria-labelledby="t4-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p4Eye">04 / 静止抖动</p><h2 id="t4-h" data-i18n="p4H">手离开后，传感器还会动吗</h2></div><span id="t4-status" class="status" role="status" data-i18n="stIdle">未开始</span></div>
+      <p class="lab-how" data-i18n="p4How"></p>
+      <div class="controls"><button id="t4-start" class="button button-primary" type="button" data-i18n="bStart">开始</button></div>
+      <div id="t4-area" class="test-area lab-area"><strong id="t4-live" class="pad-number">—</strong><p id="t4-msg" class="area-hint" data-i18n="p4Area"></p></div>
+      <div class="lab-metrics lab-metrics-3">
+        <article class="metric"><span class="metric-label" data-i18n="mEvents">静止时的移动报告</span><strong id="t4-events" class="metric-value">—</strong><span class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mTotal">累计移动计数</span><strong id="t4-total" class="metric-value">—</strong><span class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mMax">单次最大跳动</span><strong id="t4-max" class="metric-value">—</strong><span class="metric-unit"></span></article>
+      </div>
+      <p id="t4-verdict" class="lab-verdict" role="status"></p>
+      <p class="detail-copy" data-i18n="p4Note"></p>
+    </section>
+
+    <section id="t5" class="test-card lab-card" aria-labelledby="t5-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p5Eye">05 / 直线</p><h2 id="t5-h" data-i18n="p5H">画线，看轨迹和直线修正</h2></div><button id="t5-reset" class="button button-secondary" type="button" data-i18n="bReset">清空</button></div>
+      <p class="lab-how" data-i18n="p5How"></p>
+      <canvas id="t5-canvas" class="lab-draw" width="960" height="360"></canvas>
+      <div class="table-scroll lab-table"><table><thead><tr><th scope="col" data-i18n="thLine">线</th><th scope="col" data-i18n="thAngle">角度</th><th scope="col" data-i18n="thRms">偏离 px</th><th scope="col" data-i18n="thLen">长度 px</th><th scope="col" data-i18n="thBend">弯曲度</th></tr></thead><tbody id="t5-rows"></tbody></table></div>
+      <p class="detail-copy" data-i18n="p5Note"></p>
+    </section>
+
+    <section id="t6" class="test-card lab-card" aria-labelledby="t6-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p6Eye">06 / 按键与滚轮</p><h2 id="t6-h" data-i18n="p6H">按键映射、疑似双击和滚轮跳格</h2></div><button id="t6-reset" class="button button-secondary" type="button" data-i18n="bReset">清空</button></div>
+      <p class="lab-how" data-i18n="p6How"></p>
+      <div class="controls"><label class="inline-label"><span data-i18n="lChatter">疑似双击阈值</span><select id="t6-threshold"><option value="20">20 ms</option><option value="30" selected>30 ms</option><option value="50">50 ms</option></select></label></div>
+      <div id="t6-area" class="test-area lab-area"><p class="area-hint" data-i18n="p6Area"></p></div>
+      <div class="lab-metrics lab-metrics-5">
+        <article class="metric" data-button="0"><span class="metric-label" data-i18n="bLeft">左键</span><strong class="metric-value">0</strong><span class="metric-unit"></span></article>
+        <article class="metric" data-button="2"><span class="metric-label" data-i18n="bRight">右键</span><strong class="metric-value">0</strong><span class="metric-unit"></span></article>
+        <article class="metric" data-button="1"><span class="metric-label" data-i18n="bMiddle">中键</span><strong class="metric-value">0</strong><span class="metric-unit"></span></article>
+        <article class="metric" data-button="3"><span class="metric-label" data-i18n="bBack">侧键·后退</span><strong class="metric-value">0</strong><span class="metric-unit"></span></article>
+        <article class="metric" data-button="4"><span class="metric-label" data-i18n="bFwd">侧键·前进</span><strong class="metric-value">0</strong><span class="metric-unit"></span></article>
+      </div>
+      <div class="lab-metrics lab-metrics-3">
+        <article class="metric"><span class="metric-label" data-i18n="mWheel">滚轮事件</span><strong id="t6-wheel" class="metric-value">0</strong><span class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mWheelDir">主方向</span><strong id="t6-dir" class="metric-value metric-text">—</strong><span class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mWheelRev">反向事件（跳格）</span><strong id="t6-rev" class="metric-value">0</strong><span id="t6-rev-u" class="metric-unit"></span></article>
+      </div>
+      <p id="t6-verdict" class="lab-verdict" role="status"></p>
+      <p class="detail-copy" data-i18n="p6Note"></p>
+    </section>
+
+    <section id="t7" class="test-card lab-card" aria-labelledby="t7-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p7Eye">07 / 端到端延迟</p><h2 id="t7-h" data-i18n="p7H">用手机慢动作测真实点击延迟</h2></div><button id="t7-reset" class="button button-secondary" type="button" data-i18n="bReset">清空</button></div>
+      <p class="lab-how" data-i18n="p7How"></p>
+      <div id="t7-area" class="test-area lab-area flash-pad"><p class="area-hint" data-i18n="p7Area"></p></div>
+      <div class="controls lab-inputs"><label class="inline-label"><span data-i18n="lFps">慢动作帧率</span><select id="t7-fps"><option>120</option><option selected>240</option><option>480</option><option>960</option></select></label><label class="inline-label"><span data-i18n="lFrames">数到的帧数</span><input id="t7-frames" type="number" min="0" max="500" step="1"></label><button id="t7-add" class="button button-primary" type="button" data-i18n="bAdd">记录这一次</button></div>
+      <div class="lab-metrics lab-metrics-3">
+        <article class="metric"><span class="metric-label" data-i18n="mLatMed">延迟中位数</span><strong id="t7-med" class="metric-value">—</strong><span class="metric-unit" data-i18n="uLatMed"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mLatRange">范围</span><strong id="t7-range" class="metric-value">—</strong><span id="t7-n" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mLatRes">每帧精度</span><strong id="t7-res" class="metric-value">—</strong><span class="metric-unit">ms</span></article>
+      </div>
+      <div class="table-scroll lab-table"><table><thead><tr><th scope="col" data-i18n="thRun">次数</th><th scope="col" data-i18n="thFrames">帧数</th><th scope="col" data-i18n="thFps">帧率</th><th scope="col" data-i18n="thMs">延迟 ms</th></tr></thead><tbody id="t7-rows"></tbody></table></div>
+      <p class="detail-copy" data-i18n="p7Note"></p>
+    </section>
+
+    <section class="test-card lab-card" aria-labelledby="sum-h">
+      <p class="eyebrow" data-i18n="sumEye">08 / 汇总</p><h2 id="sum-h" data-i18n="sumH">本次测试记录</h2>
+      <ul id="sum-list" class="lab-summary"></ul>
+      <p class="detail-copy" data-i18n="sumNote"></p>
+      <div class="export-actions"><button id="export-lab" class="button button-primary" type="button" data-i18n="bExport">导出全部结果 JSON</button></div>
+    </section>
+  </main>
+  <footer class="site-footer" data-i18n="labFooter">浏览器可观测指标 · 本机处理 · 不上传</footer>
+  <noscript data-i18n="noscript">请启用浏览器 JavaScript 才能开始测试。</noscript>
+</body>
+</html>

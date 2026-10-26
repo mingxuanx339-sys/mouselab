@@ -4,6 +4,8 @@ title: ['MouseLab — 鼠标点击实验室', 'MouseLab — Mouse Click Lab', 'M
 metaDesc: ['MouseLab 鼠标 A/B 点击实验：对比次数、点击间隔与按住时长，数据仅存本机。不是硬件触发延迟测试。', 'MouseLab mouse A/B click experiment: compare click counts, intervals and hold times. Data stays on your device. Not a hardware latency test.', 'MouseLab マウス A/B クリック実験：回数・クリック間隔・押下時間を比較。データは端末内のみ。ハードウェア遅延の測定ではありません。'],
 langLabel: ['语言', 'Language', '言語'],
 recMode: ['录屏视图', 'Recording view', '録画ビュー'],
+navAb: ['A/B 点击测试', 'A/B click test', 'A/Bクリックテスト'],
+navLab: ['传感器实验室', 'Sensor lab', 'センサーラボ'],
 recExit: ['退出录屏视图', 'Exit recording view', '録画ビューを終了'],
 h1a: ['两只鼠标，', 'Two mice, ', '2つのマウス、'],
 h1b: ['同一个你。', 'one you.', '同じあなた。'],
@@ -111,6 +113,10 @@ export function detectLang() {
   try { const saved = localStorage.getItem(STORE); if (saved in LANGS) return saved; } catch { /* storage unavailable */ }
   const hint = String(globalThis.navigator?.language ?? '').toLowerCase();
   return hint.startsWith('ja') ? 'ja' : hint.startsWith('zh') ? 'zh' : hint.startsWith('en') ? 'en' : 'zh';
+}
+// Lets another page (e.g. lab.html) register its own [zh, en, ja] strings.
+export function addMessages(dict) {
+  ORDER.forEach((lang, i) => { for (const [key, value] of Object.entries(dict)) messages[lang][key] = value[i]; });
 }
 let current = detectLang();
 export const getLang = () => current;
