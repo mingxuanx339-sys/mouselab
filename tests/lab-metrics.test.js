@@ -154,3 +154,21 @@ test('rawAnalysis works at 125 Hz and ignores turnarounds', () => {
   assert.equal(r.spinouts, 0);
   assert.equal(r.dropouts, 0);
 });
+
+import { COIN_GRAMS, coinGrams, forceSummary, forceDiffPct } from '../src/lab-metrics.js';
+
+test('coin weights and click force summary', () => {
+  assert.equal(COIN_GRAMS[1], 1);
+  assert.equal(coinGrams({ 1: 42, 10: 2 }, 3.5), 54.5);
+  assert.equal(coinGrams({ 3: 1 }), null);
+  const runs = [
+    { mouse: 'Viper', button: 'left', grams: 60 }, { mouse: 'Viper', button: 'left', grams: 62 }, { mouse: 'Viper', button: 'left', grams: 58 },
+    { mouse: 'X3', button: 'left', grams: 40 }, { mouse: 'X3', button: 'left', grams: 44 }, { mouse: 'X3', button: 'left', grams: 0 },
+  ];
+  const s = forceSummary(runs);
+  assert.equal(s.length, 2);
+  assert.equal(s[0].medianG, 60);
+  assert.equal(s[1].n, 2);
+  assert.equal(s[1].medianG, 40);
+  near(forceDiffPct(s[0], s[1]), -33.33, 0.01, 'diff');
+});

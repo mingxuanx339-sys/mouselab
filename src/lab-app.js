@@ -1,7 +1,7 @@
 import { t, getLang, setLang, applyStatic } from './i18n.js';
 import './lab-i18n.js';
 import { pollingStats, cpiFromCounts, deviationPct, segmentStrokes, accelerationStats, jitterStats,
-  fitLine, buttonStats, wheelStats, frameLatencyMs, latencySummary, median, rawAnalysis, toMouseTesterCsv, timestampQuantumMs } from './lab-metrics.js';
+  fitLine, buttonStats, wheelStats, frameLatencyMs, latencySummary, median, rawAnalysis, toMouseTesterCsv, timestampQuantumMs, coinGrams, forceSummary, forceDiffPct } from './lab-metrics.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 0) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : v.toFixed(d).replace(/^-(0(?:\.0+)?)$/, '$1'));
@@ -488,6 +488,74 @@ function drawRawPlot() {
   }
 }
 
+
+// ---------- 9. Click force ----------
+const forceRuns = [];
+const overlay = $('arm-overlay');
+let armed = false; let audioCtx = null;
+const buttonName = (b) => t(String(b) === '2' ? 'bRight' : 'bLeft');
+function beep() {
+  try {
+    audioCtx ??= new AudioContext();
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.frequency.value = 1320; gain.gain.value = 0.15; osc.connect(gain).connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+  } catch { /* audio unavailable */ }
+}
+function setForceMsg(key, params) { const el = $('t9-msg'); el.textContent = key ? t(key, params) : ''; el.dataset.key = key ?? ''; el.dataset.params = JSON.stringify(params ?? {}); }
+function disarm() { armed = false; overlay.hidden = true; overlay.classList.remove('is-hit'); }
+$('t9-method').addEventListener('change', () => { const coins = $('t9-method').value === 'coins'; $('t9-coins').hidden = !coins; $('t9-scale').hidden = coins; });
+$('t9-arm').addEventListener('click', () => {
+  if (!settings().mouse) { setForceMsg('p9NeedName'); $('mouse-name').focus(); return; }
+  try { audioCtx ??= new AudioContext(); audioCtx.resume(); } catch { /* audio unavailable */ }
+  $('arm-hint').textContent = t('armHint', { b: buttonName($('t9-button').value) });
+  overlay.hidden = false; overlay.classList.remove('is-hit');
+  setTimeout(() => { armed = true; }, 300); // ignore the click that armed it
+});
+window.addEventListener('mousedown', (e) => {
+  if (!armed) return;
+  e.preventDefault(); e.stopPropagation();
+  if (String(e.button) !== $('t9-button').value) return;
+  armed = false;
+  overlay.classList.add('is-hit'); beep();
+  setTimeout(() => { disarm(); setForceMsg('armHit'); ($('t9-method').value === 'coins' ? $('t9-y1') : $('t9-grams')).focus(); }, 700);
+}, true);
+overlay.addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) { disarm(); setForceMsg(''); } });
+$('t9-add').addEventListener('click', () => {
+  const coins = $('t9-method').value === 'coins';
+  const grams = coins
+    ? ($('t9-y1').value === '' ? null : coinGrams({ 1: Number($('t9-y1').value), 10: Number($('t9-y10').value || 0) }, Number($('t9-cap').value || 0)))
+    : ($('t9-grams').value === '' ? null : Number($('t9-grams').value));
+  if (!grams || grams <= 0) return;
+  if (!settings().mouse) { setForceMsg('p9NeedName'); return; }
+  forceRuns.push({ mouse: settings().mouse, button: $('t9-button').value === '2' ? 'right' : 'left', grams, method: coins ? 'coins' : 'scale' });
+  $('t9-y1').value = ''; $('t9-grams').value = '';
+  setForceMsg('');
+  renderForce();
+});
+$('t9-reset').addEventListener('click', () => { forceRuns.length = 0; delete results.force; renderForce(); });
+function renderForce() {
+  const groups = forceSummary(forceRuns);
+  const btn = $('t9-button').value === '2' ? 'right' : 'left';
+  const cur = groups.find((g) => g.mouse === settings().mouse && g.button === btn);
+  $('t9-cur').textContent = cur ? fmt(cur.medianG, 1) : '—';
+  $('t9-cur-u').textContent = cur ? t('uForce', { n: cur.n }) : '';
+  const other = groups.find((g) => g.button === btn && g.mouse !== settings().mouse);
+  const diff = cur && other ? forceDiffPct(other, cur) : null;
+  $('t9-cmp').textContent = diff === null ? '—' : t('forceCmp', { a: other.mouse, b: cur.mouse, p: fmt(Math.abs(diff)), dir: t(diff < 0 ? 'lighter' : 'heavier') });
+  $('t9-rows').innerHTML = '';
+  for (const g of groups) {
+    const tr = document.createElement('tr');
+    [g.mouse, t(g.button === 'right' ? 'bRight' : 'bLeft'), g.n, fmt(g.medianG, 1), `${fmt(g.minG, 1)}–${fmt(g.maxG, 1)}`].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.append(td); });
+    $('t9-rows').append(tr);
+  }
+  if (forceRuns.length) results.force = { groups, runs: [...forceRuns] };
+  renderSummary();
+}
+$('t9-button').addEventListener('change', renderForce);
+$('mouse-name').addEventListener('change', renderForce);
+
 // ---------- Summary and export ----------
 function renderSummary() {
   const list = $('sum-list'); list.innerHTML = '';
@@ -500,6 +568,7 @@ function renderSummary() {
   if (results.buttons) add('nav6', `${Object.values(results.buttons.buttons).reduce((s, b) => s + b.suspected, 0)} · ${results.buttons.wheel.reversed}`);
   if (results.latency) add('nav7', `${fmt(results.latency.medianMs, 1)} ms · n = ${results.latency.trials}`);
   if (results.raw) add('nav8', `${fmt(results.raw.peakSpeedMs, 2)} m/s · ${results.raw.spinouts}/${results.raw.dropouts}`);
+  if (results.force) add('nav9', results.force.groups.map((g) => `${g.mouse} ${fmt(g.medianG, 1)} g`).join(' · '));
   if (!list.children.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('sumEmpty'); list.append(li); }
 }
 $('export-lab').addEventListener('click', () => {
@@ -518,7 +587,8 @@ $('set-hz').addEventListener('change', () => { if (results.polling) { results.po
 function refreshLanguage() {
   applyStatic();
   document.querySelectorAll('[id$="-msg"][data-key]').forEach((el) => { el.textContent = t(el.dataset.key, JSON.parse(el.dataset.params || '{}')); });
-  renderClock(); renderPoll(); renderDpi(); renderAccel(); renderJitter(); renderButtons(); renderLatency(); renderRaw(); renderSummary();
+  renderClock(); renderPoll(); renderDpi(); renderAccel(); renderJitter(); renderButtons(); renderLatency(); renderRaw(); renderForce(); renderSummary();
+  if ($('t9-msg').dataset.key) $('t9-msg').textContent = t($('t9-msg').dataset.key, JSON.parse($('t9-msg').dataset.params || '{}'));
 }
 $('lang-select').value = getLang();
 $('lang-select').addEventListener('change', () => { setLang($('lang-select').value); refreshLanguage(); });

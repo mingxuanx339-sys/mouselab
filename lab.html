@@ -22,7 +22,7 @@
       <p class="intro-copy" data-i18n="labIntro">7 项测试只需要浏览器和手边的东西。</p>
       <p class="measurement-limit" data-i18n="labLimit">网页只能看到浏览器收到的事件。</p>
       <nav class="lab-nav" aria-labelledby="lab-nav-label"><span id="lab-nav-label" class="eyebrow" data-i18n="labNav">测试目录</span>
-        <a href="#t1">1 · <span data-i18n="nav1">回报率</span></a><a href="#t2">2 · <span data-i18n="nav2">DPI 准确度</span></a><a href="#t3">3 · <span data-i18n="nav3">加速度</span></a><a href="#t4">4 · <span data-i18n="nav4">静止抖动</span></a><a href="#t5">5 · <span data-i18n="nav5">直线</span></a><a href="#t6">6 · <span data-i18n="nav6">按键与滚轮</span></a><a href="#t7">7 · <span data-i18n="nav7">点击延迟</span></a><a href="#t8">8 · <span data-i18n="nav8">原始数据</span></a>
+        <a href="#t1">1 · <span data-i18n="nav1">回报率</span></a><a href="#t2">2 · <span data-i18n="nav2">DPI 准确度</span></a><a href="#t3">3 · <span data-i18n="nav3">加速度</span></a><a href="#t4">4 · <span data-i18n="nav4">静止抖动</span></a><a href="#t5">5 · <span data-i18n="nav5">直线</span></a><a href="#t6">6 · <span data-i18n="nav6">按键与滚轮</span></a><a href="#t7">7 · <span data-i18n="nav7">点击延迟</span></a><a href="#t8">8 · <span data-i18n="nav8">原始数据</span></a><a href="#t9">9 · <span data-i18n="nav9">按键压力</span></a>
       </nav>
     </section>
 
@@ -157,8 +157,23 @@
       <p class="detail-copy" data-i18n="p8Note"></p>
     </section>
 
+    <section id="t9" class="test-card lab-card" aria-labelledby="t9-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p9Eye">09 / 按键压力</p><h2 id="t9-h" data-i18n="p9H">按下去需要多少克</h2></div><button id="t9-reset" class="button button-secondary" type="button" data-i18n="bReset">清空</button></div>
+      <p class="lab-how" data-i18n="p9How"></p>
+      <div class="controls lab-inputs"><label class="inline-label"><span data-i18n="lMethod">方法</span><select id="t9-method"><option value="coins" data-i18n="mCoins">A · 1 円硬币</option><option value="scale" data-i18n="mScale">B · 厨房秤</option></select></label><label class="inline-label"><span data-i18n="lButton">按键</span><select id="t9-button"><option value="0" data-i18n="bLeft">左键</option><option value="2" data-i18n="bRight">右键</option></select></label><button id="t9-arm" class="button button-primary" type="button" data-i18n="bArm">开始检测</button></div>
+      <p id="t9-msg" class="lab-verdict" role="status"></p>
+      <div class="controls lab-inputs"><span id="t9-coins" class="lab-inputs-group"><label class="inline-label"><span data-i18n="l1yen">1 円硬币 (枚)</span><input id="t9-y1" type="number" min="0" max="500" step="1"></label><label class="inline-label"><span data-i18n="l10yen">10 円硬币 (枚)</span><input id="t9-y10" type="number" min="0" max="100" step="1" value="0"></label><label class="inline-label"><span data-i18n="lCap">盖子重量 (g)</span><input id="t9-cap" type="number" min="0" max="100" step="0.1" value="0"></label></span><span id="t9-scale" class="lab-inputs-group" hidden><label class="inline-label"><span data-i18n="lGrams">秤上读数 (g)</span><input id="t9-grams" type="number" min="0" max="2000" step="0.1"></label></span><button id="t9-add" class="button button-secondary" type="button" data-i18n="bRecord">记录这一次</button></div>
+      <div class="lab-metrics lab-metrics-2">
+        <article class="metric"><span class="metric-label" data-i18n="mForce">当前鼠标触发力</span><strong id="t9-cur" class="metric-value">—</strong><span id="t9-cur-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mForceCmp">与另一只对比</span><strong id="t9-cmp" class="metric-value metric-text">—</strong><span class="metric-unit"></span></article>
+      </div>
+      <div class="table-scroll lab-table"><table><thead><tr><th scope="col" data-i18n="thMouse">鼠标</th><th scope="col" data-i18n="thButton">按键</th><th scope="col">n</th><th scope="col" data-i18n="thMedian">中位数 g</th><th scope="col" data-i18n="thRange">范围 g</th></tr></thead><tbody id="t9-rows"></tbody></table></div>
+      <p class="detail-copy" data-i18n="p9Note"></p>
+    </section>
+    <div id="arm-overlay" class="arm-overlay" hidden><div><strong data-i18n="armTitle">等待点击…</strong><p id="arm-hint"></p></div></div>
+
     <section class="test-card lab-card" aria-labelledby="sum-h">
-      <p class="eyebrow" data-i18n="sumEye">09 / 汇总</p><h2 id="sum-h" data-i18n="sumH">本次测试记录</h2>
+      <p class="eyebrow" data-i18n="sumEye">10 / 汇总</p><h2 id="sum-h" data-i18n="sumH">本次测试记录</h2>
       <ul id="sum-list" class="lab-summary"></ul>
       <p class="detail-copy" data-i18n="sumNote"></p>
       <div class="export-actions"><button id="export-lab" class="button button-primary" type="button" data-i18n="bExport">导出全部结果 JSON</button></div>

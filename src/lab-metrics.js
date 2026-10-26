@@ -333,3 +333,34 @@ export function timestampQuantumMs(ts) {
   for (let i = 1; i < ts.length; i += 1) { const d = ts[i] - ts[i - 1]; if (d > 1e-9 && d < min) min = d; }
   return Number.isFinite(min) ? min : null;
 }
+
+// ---------- Click force (coins or kitchen scale) ----------
+// Official Japanese coin weights (Ministry of Finance): 1円 is exactly 1.00 g.
+export const COIN_GRAMS = { 1: 1.0, 5: 3.75, 10: 4.5, 50: 4.0, 100: 4.8, 500: 7.1 };
+export function coinGrams(counts, extraGrams = 0) {
+  let total = finite(extraGrams) ? extraGrams : 0;
+  for (const [coin, n] of Object.entries(counts ?? {})) {
+    if (!(coin in COIN_GRAMS) || !finite(n) || n < 0) return null;
+    total += COIN_GRAMS[coin] * n;
+  }
+  return total;
+}
+/** Group click-force runs [{mouse, button, grams}] by mouse + button. */
+export function forceSummary(runs) {
+  const groups = new Map();
+  for (const r of runs) {
+    if (!finite(r.grams) || r.grams <= 0) continue;
+    const key = `${r.mouse}\u0000${r.button}`;
+    if (!groups.has(key)) groups.set(key, { mouse: r.mouse, button: r.button, values: [] });
+    groups.get(key).values.push(r.grams);
+  }
+  return [...groups.values()].map((g) => {
+    const sorted = sortNum(g.values);
+    return { mouse: g.mouse, button: g.button, n: sorted.length, medianG: quantile(sorted, 0.5), minG: sorted[0], maxG: sorted.at(-1) };
+  });
+}
+/** How much lighter (negative) or heavier (positive) b is than a, in %. */
+export function forceDiffPct(a, b) {
+  if (!a || !b || !finite(a.medianG) || !finite(b.medianG) || a.medianG <= 0) return null;
+  return ((b.medianG - a.medianG) / a.medianG) * 100;
+}

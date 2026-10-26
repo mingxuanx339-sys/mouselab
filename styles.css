@@ -562,3 +562,12 @@ h2 {
 .lab-plot { display: block; width: 100%; aspect-ratio: 1920 / 720; height: auto; margin-top: 14px; border-radius: 10px; background: #141c19; border: 1px solid var(--border); }
 .clock-info { margin-top: 8px; color: var(--green); }
 .clock-info.is-warn { color: #ffb39e; }
+.lab-metrics-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lab-inputs-group { display: contents; }
+.lab-inputs-group[hidden] { display: none; }
+.arm-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: #080c0a; text-align: center; cursor: crosshair; }
+.arm-overlay[hidden] { display: none; }
+.arm-overlay strong { font-size: clamp(28px, 6vw, 56px); color: var(--green); }
+.arm-overlay p { color: #c9d5cc; max-width: 560px; margin: 16px auto 0; line-height: 1.8; }
+.arm-overlay.is-hit { background: #fff; transition: none; }
+.arm-overlay.is-hit strong, .arm-overlay.is-hit p { color: #000; }
