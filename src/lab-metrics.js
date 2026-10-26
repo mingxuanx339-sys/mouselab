@@ -246,3 +246,90 @@ export function latencySummary(trials) {
   const values = sortNum(trials.map((tr) => tr.ms));
   return { trials: values.length, medianMs: quantile(values, 0.5), minMs: values[0] ?? null, maxMs: values.at(-1) ?? null, resolutionMs: trials.length ? 1000 / trials[0].fps : null };
 }
+
+// ---------- Raw recorder (MouseTester-style) ----------
+const COUNTS_PER_M = (dpi) => dpi / 0.0254;
+
+/**
+ * Analyse raw pointer-lock samples [{t, dx, dy}] (t in ms).
+ * Speeds are in m/s from the stated DPI, measured over windowMs slices so that
+ * single 125 µs reports at 8 kHz do not produce absurd instantaneous values.
+ */
+export function rawAnalysis(samples, dpi, { windowMs = 4, swipeSpeed = 0.5, spinoutCounts = 4 } = {}) {
+  const n = samples.length;
+  const base = { reports: n, durationMs: n > 1 ? samples[n - 1].t - samples[0].t : 0 };
+  if (n < 2 || !finite(dpi) || dpi <= 0) return { ...base, enough: false };
+  const perM = COUNTS_PER_M(dpi);
+  // Windows scale with the report rate so 125 Hz and 8 kHz are judged alike.
+  const gaps = [];
+  for (let i = 1; i < n; i += 1) { const g = samples[i].t - samples[i - 1].t; if (g > 0 && g < 50) gaps.push(g); }
+  const typical = median(gaps) ?? 1;
+  const win = Math.max(windowMs, typical * 3);
+  // Speed over the trailing window (counts after the window's first report / elapsed time).
+  const speed = new Array(n).fill(0);
+  let lo = 0; let sx = 0; let sy = 0;
+  for (let i = 0; i < n; i += 1) {
+    sx += samples[i].dx; sy += samples[i].dy;
+    while (samples[i].t - samples[lo].t > win && lo < i) { sx -= samples[lo].dx; sy -= samples[lo].dy; lo += 1; }
+    const span = samples[i].t - samples[lo].t;
+    speed[i] = span > 0 ? (Math.hypot(sx - samples[lo].dx, sy - samples[lo].dy) / perM) / (span / 1000) : 0;
+  }
+  let peak = 0; let peakAt = 0;
+  speed.forEach((v, i) => { if (v > peak) { peak = v; peakAt = i; } });
+  const maxAbsCount = samples.reduce((m, s) => Math.max(m, Math.abs(s.dx), Math.abs(s.dy)), 0);
+  const capHits = samples.filter((s) => [127, 128].includes(Math.abs(s.dx)) || [127, 128].includes(Math.abs(s.dy))).length;
+
+  // Mid-swipe checks: the movement just before and just after a report must point the
+  // same way (so turnarounds are ignored). A report pointing against that direction is
+  // a spin-out; an empty report there is a dropout.
+  let spinouts = 0; let dropouts = 0;
+  let a = 0; let b = 0;
+  for (let i = 0; i < n; i += 1) {
+    const ti = samples[i].t;
+    while (a < i && ti - samples[a].t > win) a += 1;
+    if (b < i) b = i;
+    while (b + 1 < n && samples[b + 1].t - ti <= win) b += 1;
+    if (a === i || b === i) continue;
+    let px = 0; let py = 0; let qx = 0; let qy = 0;
+    for (let k = a; k < i; k += 1) { px += samples[k].dx; py += samples[k].dy; }
+    for (let k = i + 1; k <= b; k += 1) { qx += samples[k].dx; qy += samples[k].dy; }
+    const prevSpeed = (Math.hypot(px, py) / perM) / ((ti - samples[a].t || typical) / 1000);
+    const nextSpeed = (Math.hypot(qx, qy) / perM) / ((samples[b].t - ti || typical) / 1000);
+    if (prevSpeed < swipeSpeed || nextSpeed < swipeSpeed || px * qx + py * qy <= 0) continue;
+    const s = samples[i];
+    if (!s.dx && !s.dy) { dropouts += 1; continue; }
+    const dirX = px + qx; const dirY = py + qy; const norm = Math.hypot(dirX, dirY);
+    if ((s.dx * dirX + s.dy * dirY) / norm < -spinoutCounts) spinouts += 1;
+  }
+  return {
+    ...base,
+    enough: true,
+    dpi,
+    typicalIntervalMs: typical,
+    peakSpeedMs: peak,
+    peakSpeedIps: peak / 0.0254,
+    peakAtMs: samples[peakAt].t - samples[0].t,
+    maxAbsCount,
+    capHits,
+    spinouts,
+    dropouts,
+    totalX: samples.reduce((sum, v) => sum + v.dx, 0),
+    totalY: samples.reduce((sum, v) => sum + v.dy, 0),
+    speedSeries: speed,
+  };
+}
+
+/** CSV in the MouseTester layout (title, cpi, header, rows) so other tools can open it. */
+export function toMouseTesterCsv(samples, dpi, title = 'MouseLab') {
+  const t0 = samples.length ? samples[0].t : 0;
+  const lines = [String(title).replace(/[\r\n,]+\s*/g, ' ').trim() || 'MouseLab', String(Math.round(dpi) || 800), 'xCount,yCount,Time (ms)'];
+  for (const s of samples) lines.push(`${s.dx},${s.dy},${(s.t - t0).toFixed(6)}`);
+  return lines.join('\n');
+}
+
+/** Smallest positive step of a timestamp series, an estimate of the clock quantum. */
+export function timestampQuantumMs(ts) {
+  let min = Infinity;
+  for (let i = 1; i < ts.length; i += 1) { const d = ts[i] - ts[i - 1]; if (d > 1e-9 && d < min) min = d; }
+  return Number.isFinite(min) ? min : null;
+}

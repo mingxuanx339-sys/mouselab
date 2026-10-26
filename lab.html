@@ -7,6 +7,7 @@
   <meta name="description" content="不用专业仪器，在浏览器里测鼠标回报率、DPI 准确度、加速度、静止抖动、直线修正、按键双击、滚轮跳格和端到端点击延迟。">
   <title>MouseLab — 传感器与响应实验室</title>
   <link rel="stylesheet" href="./styles.css">
+  <script src="./coi-serviceworker.js"></script>
   <script type="module" src="./src/lab-app.js"></script>
 </head>
 <body class="lab-page">
@@ -21,7 +22,7 @@
       <p class="intro-copy" data-i18n="labIntro">7 项测试只需要浏览器和手边的东西。</p>
       <p class="measurement-limit" data-i18n="labLimit">网页只能看到浏览器收到的事件。</p>
       <nav class="lab-nav" aria-labelledby="lab-nav-label"><span id="lab-nav-label" class="eyebrow" data-i18n="labNav">测试目录</span>
-        <a href="#t1">1 · <span data-i18n="nav1">回报率</span></a><a href="#t2">2 · <span data-i18n="nav2">DPI 准确度</span></a><a href="#t3">3 · <span data-i18n="nav3">加速度</span></a><a href="#t4">4 · <span data-i18n="nav4">静止抖动</span></a><a href="#t5">5 · <span data-i18n="nav5">直线</span></a><a href="#t6">6 · <span data-i18n="nav6">按键与滚轮</span></a><a href="#t7">7 · <span data-i18n="nav7">点击延迟</span></a>
+        <a href="#t1">1 · <span data-i18n="nav1">回报率</span></a><a href="#t2">2 · <span data-i18n="nav2">DPI 准确度</span></a><a href="#t3">3 · <span data-i18n="nav3">加速度</span></a><a href="#t4">4 · <span data-i18n="nav4">静止抖动</span></a><a href="#t5">5 · <span data-i18n="nav5">直线</span></a><a href="#t6">6 · <span data-i18n="nav6">按键与滚轮</span></a><a href="#t7">7 · <span data-i18n="nav7">点击延迟</span></a><a href="#t8">8 · <span data-i18n="nav8">原始数据</span></a>
       </nav>
     </section>
 
@@ -33,6 +34,7 @@
         <label><span data-i18n="lSetHz">驱动里设置的回报率 (Hz)</span><select id="set-hz"><option value="">—</option><option>125</option><option>250</option><option>500</option><option selected>1000</option><option>2000</option><option>4000</option><option>8000</option></select></label>
       </div>
       <p class="detail-copy" data-i18n="lSetupNote">换鼠标时先改名称。</p>
+      <p id="clock-info" class="detail-copy clock-info"></p>
     </section>
 
     <section id="t1" class="test-card lab-card" aria-labelledby="t1-h">
@@ -138,8 +140,25 @@
       <p class="detail-copy" data-i18n="p7Note"></p>
     </section>
 
+
+    <section id="t8" class="test-card lab-card" aria-labelledby="t8-h">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="p8Eye">08 / 原始数据记录器</p><h2 id="t8-h" data-i18n="p8H">MouseTester 风格的原始计数和速度曲线</h2></div><span id="t8-status" class="status" role="status" data-i18n="stIdle">未开始</span></div>
+      <p class="lab-how" data-i18n="p8How"></p>
+      <div class="controls lab-inputs"><button id="t8-start" class="button button-primary" type="button" data-i18n="bStart">开始</button><label class="inline-label"><span data-i18n="lPlot">图表</span><select id="t8-plot"><option value="counts" data-i18n="plotCounts">原始计数 – 时间</option><option value="interval" data-i18n="plotInterval">报告间隔 – 时间</option><option value="velocity" data-i18n="plotVelocity">速度 – 时间</option><option value="xy" data-i18n="plotXY">X-Y 轨迹</option></select></label><button id="t8-csv" class="button button-secondary" type="button" disabled data-i18n="bCsv">导出 CSV</button></div>
+      <div id="t8-area" class="test-area lab-area lab-area-short"><strong id="t8-live" class="pad-number">0</strong><p id="t8-msg" class="area-hint" data-i18n="p8Area"></p></div>
+      <canvas id="t8-plot-canvas" class="lab-plot" width="1920" height="720" aria-hidden="true"></canvas>
+      <div class="lab-metrics">
+        <article class="metric"><span class="metric-label" data-i18n="mReports">报告数</span><strong id="t8-reports" class="metric-value">—</strong><span id="t8-reports-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mPeak">最高速度</span><strong id="t8-peak" class="metric-value">—</strong><span id="t8-peak-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mMaxCount">单个报告最大计数</span><strong id="t8-max" class="metric-value">—</strong><span id="t8-max-u" class="metric-unit"></span></article>
+        <article class="metric"><span class="metric-label" data-i18n="mGlitch">回跳 / 空报告</span><strong id="t8-glitch" class="metric-value">—</strong><span class="metric-unit" data-i18n="uGlitch"></span></article>
+      </div>
+      <p id="t8-verdict" class="lab-verdict" role="status"></p>
+      <p class="detail-copy" data-i18n="p8Note"></p>
+    </section>
+
     <section class="test-card lab-card" aria-labelledby="sum-h">
-      <p class="eyebrow" data-i18n="sumEye">08 / 汇总</p><h2 id="sum-h" data-i18n="sumH">本次测试记录</h2>
+      <p class="eyebrow" data-i18n="sumEye">09 / 汇总</p><h2 id="sum-h" data-i18n="sumH">本次测试记录</h2>
       <ul id="sum-list" class="lab-summary"></ul>
       <p class="detail-copy" data-i18n="sumNote"></p>
       <div class="export-actions"><button id="export-lab" class="button button-primary" type="button" data-i18n="bExport">导出全部结果 JSON</button></div>

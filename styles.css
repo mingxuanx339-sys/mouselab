@@ -558,3 +558,7 @@ h2 {
   .site-header { flex-wrap: wrap; height: auto; min-height: 64px; padding: 12px 0; row-gap: 10px; }
   .header-actions { flex-wrap: wrap; }
 }
+.lab-area-short { min-height: 150px; }
+.lab-plot { display: block; width: 100%; aspect-ratio: 1920 / 720; height: auto; margin-top: 14px; border-radius: 10px; background: #141c19; border: 1px solid var(--border); }
+.clock-info { margin-top: 8px; color: var(--green); }
+.clock-info.is-warn { color: #ffb39e; }

@@ -116,3 +116,41 @@ test('frame latency from slow-motion video', () => {
   assert.equal(s.medianMs, 25);
   near(s.resolutionMs, 4.17, 0.01, 'res');
 });
+
+import { rawAnalysis, toMouseTesterCsv, timestampQuantumMs } from '../src/lab-metrics.js';
+
+test('rawAnalysis measures peak speed in m/s from DPI', () => {
+  // 1000 Hz, 1600 DPI, 63 counts per ms = 63000 counts/s = 1 m/s
+  const samples = Array.from({ length: 200 }, (_, i) => ({ t: i, dx: 63, dy: 0 }));
+  const r = rawAnalysis(samples, 1600);
+  assert.ok(Math.abs(r.peakSpeedMs - 63 * 1000 / (1600 / 0.0254)) < 0.02, String(r.peakSpeedMs));
+  assert.equal(r.maxAbsCount, 63);
+  assert.equal(r.spinouts, 0);
+  assert.equal(r.dropouts, 0);
+});
+
+test('rawAnalysis flags spin-outs, dropouts and the 8-bit cap', () => {
+  const samples = Array.from({ length: 200 }, (_, i) => ({ t: i, dx: 127, dy: 0 }));
+  samples[100].dx = -40;   // reversal mid-swipe
+  samples[120].dx = 0;     // empty report mid-swipe
+  const r = rawAnalysis(samples, 800);
+  assert.equal(r.spinouts, 1);
+  assert.equal(r.dropouts, 1);
+  assert.ok(r.capHits > 150);
+  assert.equal(rawAnalysis(samples.slice(0, 1), 800).enough, false);
+});
+
+test('MouseTester CSV layout and timestamp quantum', () => {
+  const csv = toMouseTesterCsv([{ t: 10, dx: 1, dy: -2 }, { t: 11.125, dx: 0, dy: 3 }], 800, 'G PRO, test');
+  assert.deepEqual(csv.split('\n'), ['G PRO test', '800', 'xCount,yCount,Time (ms)', '1,-2,0.000000', '0,3,1.125000']);
+  assert.equal(timestampQuantumMs([0, 0.1, 0.1, 0.3]), 0.1);
+});
+
+test('rawAnalysis works at 125 Hz and ignores turnarounds', () => {
+  // back-and-forth at 125 Hz: 8 ms reports, sine velocity, direction flips at low speed
+  const samples = Array.from({ length: 500 }, (_, i) => ({ t: i * 8, dx: Math.round(400 * Math.sin(i / 10)), dy: 0 }));
+  const r = rawAnalysis(samples, 800);
+  assert.ok(r.peakSpeedMs > 1, String(r.peakSpeedMs));
+  assert.equal(r.spinouts, 0);
+  assert.equal(r.dropouts, 0);
+});

@@ -1,7 +1,7 @@
 import { t, getLang, setLang, applyStatic } from './i18n.js';
 import './lab-i18n.js';
 import { pollingStats, cpiFromCounts, deviationPct, segmentStrokes, accelerationStats, jitterStats,
-  fitLine, buttonStats, wheelStats, frameLatencyMs, latencySummary, median } from './lab-metrics.js';
+  fitLine, buttonStats, wheelStats, frameLatencyMs, latencySummary, median, rawAnalysis, toMouseTesterCsv, timestampQuantumMs } from './lab-metrics.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 0) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : v.toFixed(d).replace(/^-(0(?:\.0+)?)$/, '$1'));
@@ -15,6 +15,23 @@ const setStatus = (n, key) => {
   el.classList.toggle('is-active', key === 'stRun' || key === 'stWait');
 };
 const setMsg = (n, key, params) => { const el = $(`t${n}-msg`); if (el) { el.textContent = t(key, params); el.dataset.key = key; el.dataset.params = JSON.stringify(params ?? {}); } };
+const isFirefox = /firefox/i.test(navigator.userAgent);
+const rawSupported = 'onpointerrawupdate' in window;
+// Firefox keeps PointerEvent.timeStamp frozen, so fall back to the page clock there.
+const stamp = (e) => (isFirefox ? performance.now() : e.timeStamp);
+const subEvents = (e) => (!isFirefox && typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : []);
+function clockQuantumMs() {
+  let prev = performance.now(); let min = Infinity;
+  for (let i = 0; i < 20000; i += 1) { const now = performance.now(); const d = now - prev; if (d > 0 && d < min) min = d; prev = now; }
+  return Number.isFinite(min) ? min : null;
+}
+const clock = { quantumMs: clockQuantumMs(), isolated: Boolean(window.crossOriginIsolated) };
+function renderClock() {
+  const el = $('clock-info');
+  const q = clock.quantumMs === null ? '—' : Math.max(1, Math.round(clock.quantumMs * 1000));
+  el.textContent = `${t(clock.isolated ? 'clockHi' : 'clockLo', { q })}${isFirefox ? ` ${t('clockFx')}` : ''}`;
+  el.classList.toggle('is-warn', isFirefox || !clock.isolated);
+}
 const settings = () => ({ mouse: $('mouse-name').value.trim(), dpi: Number($('set-dpi').value) || null, hz: Number($('set-hz').value) || null });
 
 // ---------- Pointer lock shared by tests 2, 3, 4 ----------
@@ -32,7 +49,7 @@ async function startLock(el, mode, handlers) {
     if (lock && document.pointerLockElement !== el) { const n = mode; lock = null; alertLock(n); }
   }, 400);
 }
-function alertLock(mode) { const map = { dpi: 2, accel: 3, jitter: 4 }; const n = map[mode]; setStatus(n, 'stIdle'); $(`t${n}-msg`).textContent = t('lockErr'); }
+function alertLock(mode) { const map = { dpi: 2, accel: 3, jitter: 4, raw: 8 }; const n = map[mode]; setStatus(n, 'stIdle'); $(`t${n}-msg`).textContent = t('lockErr'); }
 function endLock(cancelled) {
   if (!lock) return;
   const current = lock;
@@ -42,10 +59,18 @@ function endLock(cancelled) {
 }
 document.addEventListener('mousemove', (e) => {
   if (!lock || document.pointerLockElement !== lock.el) return;
-  const d = { dx: e.movementX, dy: e.movementY, t: e.timeStamp };
+  const d = { dx: e.movementX, dy: e.movementY, t: stamp(e) };
   lock.deltas.push(d);
   lock.onMove?.(lock, d);
 });
+// Recorder: every raw report (pointerrawupdate + coalesced sub-events) while locked.
+if (rawSupported) {
+  document.addEventListener('pointerrawupdate', (e) => {
+    if (!lock || lock.mode !== 'raw' || document.pointerLockElement !== lock.el) return;
+    const list = subEvents(e);
+    for (const c of (list.length ? list : [e])) if (c.movementX || c.movementY) lock.samples.push({ dx: c.movementX, dy: c.movementY, t: isFirefox ? performance.now() : c.timeStamp });
+  });
+}
 document.addEventListener('mousedown', (e) => {
   if (!lock || document.pointerLockElement !== lock.el || lock.mode === 'jitter') return;
   if (e.button === 0) { e.preventDefault(); endLock(false); }
@@ -58,8 +83,8 @@ const POLL_MS = 5000;
 function pollPush(time) { if (time > poll.last) { poll.ts.push(time); poll.last = time; } else if (time === poll.last) poll.ts.push(time); }
 function onPollEvent(e) {
   if (!poll.running) return;
-  const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
-  if (list.length > 1) { if (poll.method === 'methodMove') poll.method = 'methodCoal'; list.forEach((c) => pollPush(c.timeStamp)); } else pollPush(e.timeStamp);
+  const list = subEvents(e);
+  if (list.length > 1) { if (poll.method === 'methodMove') poll.method = 'methodCoal'; list.forEach((c) => pollPush(c.timeStamp)); } else pollPush(stamp(e));
   if (poll.startAt === null) {
     poll.startAt = performance.now();
     poll.timer = setInterval(() => {
@@ -82,10 +107,9 @@ function pollLive() {
   requestAnimationFrame(pollLive);
 }
 const area1 = $('t1-area');
-const rawSupported = 'onpointerrawupdate' in window;
 area1.addEventListener(rawSupported ? 'pointerrawupdate' : 'pointermove', onPollEvent);
 $('t1-start').addEventListener('click', () => {
-  Object.assign(poll, { running: true, ts: [], method: rawSupported ? 'methodRaw' : 'methodMove', startAt: null, last: -1 });
+  Object.assign(poll, { running: true, ts: [], method: isFirefox ? 'methodFx' : rawSupported ? 'methodRaw' : 'methodMove', startAt: null, last: -1 });
   clearInterval(poll.timer);
   setStatus(1, 'stRun'); setMsg(1, 'p1Wait');
   $('t1-start').disabled = true; $('t1-stop').disabled = false;
@@ -99,7 +123,7 @@ function stopPoll() {
   poll.running = false; clearInterval(poll.timer);
   $('t1-start').disabled = false; $('t1-stop').disabled = true; area1.classList.remove('is-active');
   const s = pollingStats(poll.ts);
-  results.polling = { ...s, method: poll.method, setHz: settings().hz };
+  results.polling = { ...s, method: poll.method, setHz: settings().hz, clockQuantumMs: clock.quantumMs, crossOriginIsolated: clock.isolated };
   setStatus(1, 'stDone'); setMsg(1, 'p1Area');
   $('t1-live').textContent = fmt(s.avgHz);
   renderPoll();
@@ -354,6 +378,116 @@ function renderLatency() {
   renderSummary();
 }
 
+
+// ---------- 8. Raw recorder ----------
+const REC_MS = 10000;
+let recSamples = []; let recTimer = null;
+$('t8-start').addEventListener('click', () => {
+  if (lock) return;
+  recSamples = [];
+  setStatus(8, 'stRun'); $('t8-live').textContent = '0';
+  const t0 = performance.now();
+  startLock($('t8-area'), 'raw', {
+    samples: [],
+    onFinish: (l, cancelled) => {
+      clearInterval(recTimer);
+      const fromMoves = l.deltas.filter((d) => d.dx || d.dy);
+      recSamples = rawSupported && l.samples.length ? l.samples : fromMoves;
+      setMsg(8, 'p8Area');
+      if (recSamples.length < 20) { setStatus(8, 'stIdle'); return; }
+      const a = rawAnalysis(recSamples, settings().dpi ?? 800);
+      const p = pollingStats(recSamples.map((x) => x.t));
+      const { speedSeries, ...summary } = a;
+      results.raw = { ...summary, avgHz: p.avgHz, source: rawSupported && l.samples.length ? 'pointerrawupdate' : 'mousemove', rawInput: l.raw, timestampQuantumMs: timestampQuantumMs(recSamples.map((x) => x.t)) };
+      recAnalysis = a;
+      setStatus(8, 'stDone');
+      $('t8-csv').disabled = false;
+      renderRaw();
+    },
+  });
+  clearInterval(recTimer);
+  recTimer = setInterval(() => {
+    if (!lock || lock.mode !== 'raw') return;
+    const n = rawSupported && lock.samples.length ? lock.samples.length : lock.deltas.length;
+    const left = Math.max(0, (REC_MS - (performance.now() - t0)) / 1000);
+    $('t8-live').textContent = n; setMsg(8, 'p8Live', { n, s: left.toFixed(1) });
+    if (left <= 0) endLock(false);
+  }, 100);
+});
+let recAnalysis = null;
+$('t8-plot').addEventListener('change', () => drawRawPlot());
+$('t8-csv').addEventListener('click', () => {
+  if (!recSamples.length) return;
+  const text = toMouseTesterCsv(recSamples, settings().dpi ?? 800, settings().mouse || 'MouseLab');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+  a.download = `mouselab-raw-${(settings().mouse || 'mouse').replace(/[^\w.-]+/g, '-')}.csv`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+function renderRaw() {
+  const r = results.raw;
+  if (!r) return;
+  $('t8-reports').textContent = r.reports;
+  $('t8-reports-u').textContent = `${fmt(r.avgHz)} Hz · ${fmt(r.durationMs / 1000, 1)} s`;
+  $('t8-peak').textContent = fmt(r.peakSpeedMs, 2);
+  $('t8-peak-u').textContent = t('uPeak', { ips: fmt(r.peakSpeedIps) });
+  $('t8-max').textContent = r.maxAbsCount;
+  $('t8-max-u').textContent = t('uMaxCount', { n: r.capHits });
+  $('t8-glitch').textContent = `${r.spinouts} / ${r.dropouts}`;
+  const parts = [r.spinouts || r.dropouts ? t('p8Bad', { a: r.spinouts, b: r.dropouts }) : t('p8Clean')];
+  if (r.capHits) parts.push(t('p8Cap'));
+  $('t8-verdict').textContent = parts.join(' ');
+  $('t8-verdict').classList.toggle('is-bad', Boolean(r.spinouts || r.dropouts || r.capHits));
+  drawRawPlot();
+  renderSummary();
+}
+function niceStep(range, target) {
+  const raw = range / target; const p = 10 ** Math.floor(Math.log10(raw || 1)); const m = raw / p;
+  return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+}
+function drawRawPlot() {
+  const cv = $('t8-plot-canvas'); const ctx = cv.getContext('2d');
+  const W = cv.width; const H = cv.height; const L = 110; const R = 30; const T = 30; const B = 70;
+  ctx.clearRect(0, 0, W, H);
+  if (!recSamples.length || !recAnalysis) return;
+  const kind = $('t8-plot').value;
+  const t0 = recSamples[0].t;
+  let series = []; let xlab = 'Time (ms)'; let ylab = ''; let equal = false; let lines = false;
+  if (kind === 'counts') {
+    series = [{ c: '#bcf279', pts: recSamples.map((s) => [s.t - t0, s.dx]) }, { c: '#94c9ff', pts: recSamples.map((s) => [s.t - t0, s.dy]) }]; ylab = 'Counts (x green, y blue)'; lines = true;
+  } else if (kind === 'interval') {
+    series = [{ c: '#bcf279', pts: recSamples.slice(1).map((s, i) => [s.t - t0, s.t - recSamples[i].t]) }]; ylab = 'Interval (ms)';
+  } else if (kind === 'velocity') {
+    series = [{ c: '#bcf279', pts: recSamples.map((s, i) => [s.t - t0, recAnalysis.speedSeries[i]]) }]; ylab = 'Speed (m/s)'; lines = true;
+  } else {
+    let x = 0; let y = 0; const pts = [[0, 0]];
+    for (const s of recSamples) { x += s.dx; y += s.dy; pts.push([x, y]); }
+    series = [{ c: '#94c9ff', pts }]; xlab = 'x (counts)'; ylab = 'y (counts)'; equal = true; lines = true;
+  }
+  const all = series.flatMap((s) => s.pts);
+  let [x0, x1] = [Math.min(...all.map((p) => p[0])), Math.max(...all.map((p) => p[0]))];
+  let [y0, y1] = [Math.min(...all.map((p) => p[1])), Math.max(...all.map((p) => p[1]))];
+  if (kind === 'interval') y0 = 0;
+  if (x1 === x0) x1 = x0 + 1; if (y1 === y0) { y1 += 1; y0 -= 1; }
+  const pw = W - L - R; const ph = H - T - B;
+  if (equal) {
+    const sx = pw / (x1 - x0); const sy = ph / (y1 - y0); const s = Math.min(sx, sy);
+    const cx = (x0 + x1) / 2; const cy = (y0 + y1) / 2; x0 = cx - pw / s / 2; x1 = cx + pw / s / 2; y0 = cy - ph / s / 2; y1 = cy + ph / s / 2;
+  }
+  const X = (v) => L + ((v - x0) / (x1 - x0)) * pw;
+  const Y = equal ? (v) => T + ((v - y0) / (y1 - y0)) * ph : (v) => T + ph - ((v - y0) / (y1 - y0)) * ph;
+  ctx.font = '22px monospace'; ctx.fillStyle = '#99a8a0'; ctx.strokeStyle = '#2b3933'; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8); const ys = niceStep(y1 - y0, 6);
+  for (let v = Math.ceil(x0 / xs) * xs; v <= x1; v += xs) { ctx.beginPath(); ctx.moveTo(X(v), T); ctx.lineTo(X(v), T + ph); ctx.stroke(); ctx.fillText(String(+v.toFixed(3)), X(v) - 18, H - B + 30); }
+  for (let v = Math.ceil(y0 / ys) * ys; v <= y1; v += ys) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(L + pw, Y(v)); ctx.stroke(); ctx.fillText(String(+v.toFixed(3)), 8, Y(v) + 7); }
+  ctx.fillText(xlab, L + pw / 2 - 60, H - 14); ctx.fillText(ylab, L + 8, T + 22);
+  for (const s of series) {
+    ctx.strokeStyle = s.c; ctx.fillStyle = s.c; ctx.lineWidth = 1.5;
+    if (lines) { ctx.beginPath(); s.pts.forEach(([a, b], i) => (i ? ctx.lineTo(X(a), Y(b)) : ctx.moveTo(X(a), Y(b)))); ctx.stroke(); }
+    if (!lines || s.pts.length < 3000) for (const [a, b] of s.pts) ctx.fillRect(X(a) - 2, Y(b) - 2, 4, 4);
+  }
+}
+
 // ---------- Summary and export ----------
 function renderSummary() {
   const list = $('sum-list'); list.innerHTML = '';
@@ -365,11 +499,12 @@ function renderSummary() {
   if (results.lines) add('nav5', `n = ${results.lines.count} · ${fmt(results.lines.medianRmsPx, 2)} px`);
   if (results.buttons) add('nav6', `${Object.values(results.buttons.buttons).reduce((s, b) => s + b.suspected, 0)} · ${results.buttons.wheel.reversed}`);
   if (results.latency) add('nav7', `${fmt(results.latency.medianMs, 1)} ms · n = ${results.latency.trials}`);
+  if (results.raw) add('nav8', `${fmt(results.raw.peakSpeedMs, 2)} m/s · ${results.raw.spinouts}/${results.raw.dropouts}`);
   if (!list.children.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('sumEmpty'); list.append(li); }
 }
 $('export-lab').addEventListener('click', () => {
   const data = { schema: 'mouselab-sensor-lab/1', exportedAt: new Date().toISOString(), userAgent: navigator.userAgent,
-    devicePixelRatio: window.devicePixelRatio, settings: settings(), results };
+    devicePixelRatio: window.devicePixelRatio, clock, settings: settings(), results };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   const name = (settings().mouse || 'mouse').replace(/[^\w.-]+/g, '-');
@@ -383,7 +518,7 @@ $('set-hz').addEventListener('change', () => { if (results.polling) { results.po
 function refreshLanguage() {
   applyStatic();
   document.querySelectorAll('[id$="-msg"][data-key]').forEach((el) => { el.textContent = t(el.dataset.key, JSON.parse(el.dataset.params || '{}')); });
-  renderPoll(); renderDpi(); renderAccel(); renderJitter(); renderButtons(); renderLatency(); renderSummary();
+  renderClock(); renderPoll(); renderDpi(); renderAccel(); renderJitter(); renderButtons(); renderLatency(); renderRaw(); renderSummary();
 }
 $('lang-select').value = getLang();
 $('lang-select').addEventListener('change', () => { setLang($('lang-select').value); refreshLanguage(); });
