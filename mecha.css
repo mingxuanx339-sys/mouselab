@@ -7,10 +7,10 @@
   --surface-raised: #241a3a;
   --border: #33284f;
   --muted: #a597c4;
-  --green: #b77bff;          /* primary accent (var name kept for compatibility) */
+  --green: #c77dff;          /* primary accent (var name kept for compatibility) */
   --green-dark: #2a1745;
-  --accent: #b77bff;
-  --hot: #ff5fd2;
+  --accent: #c77dff;
+  --hot: #ff6ad5;
   --cyan: #7fd8ff;
   --warn: #ffc23d;
   --display: "Orbitron", "Rajdhani", "Noto Sans SC", sans-serif;
@@ -19,8 +19,9 @@
 html:root {
   min-height: 100%;
   background:
-    linear-gradient(90deg, #0d0a16 0%, #0d0a16f2 40%, #0d0a16b3 60%, #0d0a1659 78%, #0d0a1633 100%),
-    url("./assets/mech-bg.webp") right center / cover no-repeat,
+    linear-gradient(90deg, #0d0a16 0%, #0d0a16f0 38%, #0d0a16a6 58%, #0d0a1640 80%, #0d0a1626 100%),
+    radial-gradient(700px 500px at 78% 55%, #ff6ad51a 0%, transparent 70%),
+    url("./assets/mech-bg.webp") right -7vw center / auto 100% no-repeat,
     radial-gradient(1000px 600px at 80% -10%, #2b1a4d 0%, transparent 60%),
     radial-gradient(800px 500px at -10% 40%, #1d1430 0%, transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M14 0h28l14 24-14 24H14L0 24z' fill='none' stroke='%23ffffff' stroke-opacity='.035'/%3E%3C/svg%3E"),
@@ -36,10 +37,10 @@ main, .site-header, .site-footer { position: relative; z-index: 1; }
 /* header with hazard stripe */
 .site-header { border-bottom: 0; position: relative; }
 .site-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-  background: repeating-linear-gradient(-45deg, var(--accent) 0 10px, #130d20 10px 20px); opacity: .85; }
+  background: repeating-linear-gradient(-45deg, var(--hot) 0 10px, #130d20 10px 20px, var(--accent) 20px 30px, #130d20 30px 40px); opacity: .85; }
 .wordmark { font-family: var(--display); letter-spacing: .12em; font-size: 14px; text-transform: uppercase; }
 .wordmark-icon { border-radius: 0; background: linear-gradient(135deg, var(--accent), var(--hot)); color: #fff; clip-path: polygon(25% 0, 100% 0, 100% 75%, 75% 100%, 0 100%, 0 25%); font-family: var(--display); }
-.wordmark .muted { color: var(--cyan); }
+.wordmark .muted { color: var(--hot); }
 
 /* hero */
 .intro { max-width: 640px; }
@@ -73,7 +74,7 @@ h2 { font-family: var(--display), sans-serif; letter-spacing: .04em; font-size: 
 input, select, textarea { border-radius: 0; background: #0f0b1a; border-color: #3a2c5c; color: #e6edf3; }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline-color: var(--cyan); }
 .device-A { --device-color: #ff5fd2; }
-.device-B { --device-color: #7fd8ff; }
+.device-B { --device-color: #b98cff; }
 .setup-grid label { border-top: 0; border-left: 3px solid var(--device-color); padding: 10px 12px; background: color-mix(in srgb, var(--device-color) 7%, transparent); }
 
 /* buttons */
@@ -184,7 +185,7 @@ th { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }
 @media (max-width: 720px) {
   html:root { background:
     linear-gradient(180deg, #0d0a16b3 0%, #0d0a16e6 45%, #0d0a16 100%),
-    url("./assets/mech-bg-small.webp") 70% top / auto 70vh no-repeat,
+    url("./assets/mech-bg-phone.webp") center top / 100% auto no-repeat,
     #0d0a16; background-attachment: fixed; }
 }
 /* cards sit on the mech: a touch of glass */

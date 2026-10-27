@@ -1,0 +1,144 @@
+/* ♡ Pastel pink theme — overrides mecha.css colours, keeps layout & behaviour */
+:root {
+  color: #4a2440; background: #fff0f7;
+  --surface: #ffffff; --surface-raised: #ffe6f2; --border: #f6c6de; --muted: #9a6b8c;
+  --green: #ff6fbf; --green-dark: #ffe0ef; --accent: #ff6fbf; --hot: #ff4fa8; --cyan: #b48cff; --warn: #ff9ccf;
+}
+html:root {
+  background:
+    linear-gradient(90deg, #fff0f7 0%, #fff0f7f2 36%, #fff0f7b3 56%, #fff0f733 80%, #fff0f700 100%),
+    url("./assets/mech-bg.webp") right -7vw center / auto 100% no-repeat,
+    radial-gradient(600px 400px at 10% 10%, #ffd6ec 0%, transparent 70%),
+    radial-gradient(700px 500px at 0% 90%, #eadcff 0%, transparent 70%),
+    #fff0f7;
+  background-attachment: fixed;
+}
+body::after { background: radial-gradient(#ff8fc81a 1px, transparent 1.2px) 0 0 / 18px 18px; }
+.site-header::after { background: repeating-linear-gradient(-45deg, #ff8fc8 0 10px, #ffffff 10px 20px, #c9a7ff 20px 30px, #ffffff 30px 40px); opacity: 1; }
+.wordmark { color: #4a2440; } .wordmark .muted { color: var(--hot); }
+.wordmark-icon { background: linear-gradient(135deg, #ff8fc8, #c9a7ff); color: #fff; }
+h1 { color: #4a2440; }
+h1 > span:not(.h1-plain) { background: linear-gradient(90deg, #ff4fa8, #c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; filter: none; }
+.h1-tag { color: #c084fc; }
+.intro-copy { color: #6b4060; }
+.measurement-limit { color: #7a4a6d; background: #ffffffb3; border-left-color: #ff6fbf; border-radius: 0 12px 12px 0; }
+.eyebrow, .eyebrow::before { color: #ff4fa8; }
+.test-card { clip-path: none; border-radius: 22px; border: 1.5px solid #f6c6de; background: #ffffffe0; backdrop-filter: blur(6px); box-shadow: 0 12px 36px #ff7ac81f; }
+.test-card::before { border-color: #ff8fc8; border-radius: 6px 0 0 0; }
+.test-card::after { border-color: #c9a7ff; border-radius: 0 0 6px 0; }
+h2 { color: #4a2440; }
+label, .metric-label, .notes-label span { color: #7a4a6d; }
+input, select, textarea { background: #fff; border: 1.5px solid #f6c6de; color: #4a2440; border-radius: 12px; }
+input::placeholder, textarea::placeholder { color: #c79ab8; }
+.setup-grid label { background: color-mix(in srgb, var(--device-color) 10%, #fff); border-radius: 0 14px 14px 0; }
+.device-A { --device-color: #ff5fae; } .device-B { --device-color: #a97cff; }
+.button { clip-path: none; border-radius: 999px; }
+.button-primary { background: linear-gradient(135deg, #ff8fc8, #c9a7ff); color: #fff; box-shadow: 0 6px 18px #ff7ac855; }
+.button-primary:not(:disabled):hover { background: linear-gradient(135deg, #ffa3d3, #d6b9ff); }
+.button-secondary { background: #fff; border: 1.5px solid #f6c6de; color: #7a3b68; }
+.button-secondary:not(:disabled):hover { background: #fff0f7; border-color: #ff8fc8; }
+.header-actions select { background: #fff; }
+.status { color: #9a6b8c; border-color: #f6c6de; background: #fff; border-radius: 999px; }
+.status.is-active { color: #d6337f; background: #ffe0ef; border-color: #ff8fc8; }
+.comm { background: #ffffffe6; border-color: #f6c6de; border-left-color: #ff6fbf; border-radius: 0 14px 14px 0; clip-path: none; }
+.comm p { color: #4a2440; } .comm-head { color: #c084fc; } .comm-head b { color: #ff4fa8; }
+.test-area { clip-path: none; border-radius: 20px; border: 2px dashed #f6b3d6; background-color: #fff8fc;
+  background-image: linear-gradient(#ff8fc81a 1px, transparent 1px), linear-gradient(90deg, #ff8fc81a 1px, transparent 1px); }
+.test-area::before { background: conic-gradient(from 0deg, #ff8fc8 0 30deg, transparent 30deg 90deg, #c9a7ff 90deg 120deg, transparent 120deg 180deg, #ff8fc8 180deg 210deg, transparent 210deg 270deg, #c9a7ff 270deg 300deg, transparent 300deg); opacity: .8; }
+.test-area::after { opacity: .35; }
+.test-area.is-active { background-color: #fff0f7; border-color: #ff4fa8; background-image: linear-gradient(#ff4fa81f 1px, transparent 1px), linear-gradient(90deg, #ff4fa81f 1px, transparent 1px); }
+.click-pad.tap-alt.is-active { background-color: #ffe6f2; }
+.pad-number { color: #ff4fa8; text-shadow: 0 0 18px #ff8fc888; }
+.area-title { color: #4a2440; } .area-hint, .session-notice, .controls-hint, .detail-copy, .protocol { color: #9a6b8c; }
+progress { accent-color: #ff6fbf; }
+.metric { background: #fff; border-color: #f6c6de; border-top: 2px solid #ffb3d9; border-radius: 16px; }
+.metric-value { color: #4a2440; } .metric-unit { color: #b07fa3; }
+.comparison-device { background: #fff; border-color: #f6c6de; border-radius: 18px; }
+.comparison-device h3, dd, .comparison-note, td { color: #4a2440; }
+dt, th, caption, .comparison-device p, .empty-state { color: #9a6b8c; }
+dl div, th, td { border-color: #f6d3e5; }
+.notes h2 { color: #4a2440; } .notes p { color: #8a5a7d; }
+.site-footer { color: #9a6b8c; border-top-color: #f6c6de; } .site-footer::before { content: "♡ "; color: #ff4fa8; }
+.metric-definitions p { color: #6b4060; }
+a { color: #e0408f; }
+@media (max-width: 720px) {
+  html:root { background:
+    linear-gradient(180deg, #fff0f7b3 0%, #fff0f7e6 35%, #fff0f7 70%),
+    url("./assets/mech-bg.webp") 60% top / 150% auto no-repeat,
+    #fff0f7; background-attachment: fixed; }
+}
+
+/* ===== pink mecha accents ===== */
+:root { --cutp: 16px; --pk: #ff8fc8; --pk2: #ff4fa8; --lv: #c9a7ff; --edge: #f6c6de; }
+/* faint pink circuit traces on the page */
+body { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='none' stroke='%23ff8fc8' stroke-opacity='.16' stroke-width='1.2'%3E%3Cpath d='M10 40h60l20 20h50M140 60v40l20 20h50M30 160h40l20-20h40l10 10h60M70 200v-30M180 20v30'/%3E%3C/g%3E%3Cg fill='%23ff8fc8' fill-opacity='.28'%3E%3Ccircle cx='10' cy='40' r='2.5'/%3E%3Ccircle cx='140' cy='60' r='2.5'/%3E%3Ccircle cx='210' cy='120' r='2.5'/%3E%3Ccircle cx='30' cy='160' r='2.5'/%3E%3Ccircle cx='70' cy='200' r='2.5'/%3E%3Ccircle cx='180' cy='20' r='2.5'/%3E%3C/g%3E%3C/svg%3E"); background-repeat: repeat; background-attachment: fixed; }
+
+/* armour-plate cards: cut corners, diagonal edge lines, rivets, top tick ruler */
+.test-card {
+  border: 0; border-radius: 0;
+  clip-path: polygon(var(--cutp) 0, 100% 0, 100% calc(100% - var(--cutp)), calc(100% - var(--cutp)) 100%, 0 100%, 0 var(--cutp));
+  box-shadow: inset 0 0 0 1.5px var(--edge), inset 0 3px 0 0 #ffe0ef;
+  background:
+    linear-gradient(135deg, transparent calc(var(--cutp) - 1px), var(--pk) calc(var(--cutp) - 1px) calc(var(--cutp) + 1.5px), transparent calc(var(--cutp) + 1.5px)) top left / 40px 40px no-repeat,
+    linear-gradient(-45deg, transparent calc(var(--cutp) - 1px), var(--lv) calc(var(--cutp) - 1px) calc(var(--cutp) + 1.5px), transparent calc(var(--cutp) + 1.5px)) bottom right / 40px 40px no-repeat,
+    repeating-linear-gradient(90deg, #ffb3d9 0 2px, transparent 2px 9px) right 64px top 10px / 150px 7px no-repeat,
+    radial-gradient(circle, #ffc2e2 2.2px, #ff8fc8 2.6px, transparent 3.2px) right 14px top 12px / 10px 10px no-repeat,
+    radial-gradient(circle, #ffc2e2 2.2px, #ff8fc8 2.6px, transparent 3.2px) left 12px bottom 12px / 10px 10px no-repeat,
+    radial-gradient(circle, #e6d6ff 2.2px, #c9a7ff 2.6px, transparent 3.2px) left 30px top 12px / 10px 10px no-repeat,
+    #ffffffe8;
+}
+.test-card::before { top: 6px; left: 22px; width: 34px; height: 3px; border: 0; background: linear-gradient(90deg, var(--pk2), var(--pk)); border-radius: 0; }
+.test-card::after { right: 22px; bottom: 6px; width: 34px; height: 3px; border: 0; background: linear-gradient(90deg, var(--lv), var(--pk)); border-radius: 0; }
+
+/* section tag: angled pink badge */
+.test-card .eyebrow { display: inline-block; padding: 4px 14px 4px 10px; color: #fff; background: linear-gradient(90deg, var(--pk2), var(--pk));
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0 100%); letter-spacing: .14em; font-size: 11px; }
+.test-card .eyebrow::before { content: "◆ "; color: #fff; }
+.intro .eyebrow { display: inline-block; padding: 4px 14px; color: var(--pk2); background: linear-gradient(90deg, #ffd6ec, #efe3ff); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+
+/* chamfered mecha buttons in pink */
+.button { border-radius: 0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); letter-spacing: .08em; }
+.button-primary { background: linear-gradient(135deg, #ff6fbf, #c9a7ff); box-shadow: none; }
+.button-secondary { box-shadow: inset 0 0 0 1.5px var(--edge); border: 0; }
+.status { border-radius: 0; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); padding: 6px 16px; }
+
+/* inputs: one cut corner + pink focus glow */
+input, select, textarea { border-radius: 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--pk); outline-offset: 1px; }
+.setup-grid label { border-radius: 0; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); }
+.comm { border-radius: 0; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); }
+
+/* click pad: lock-on frame with four pink corner brackets + HUD labels */
+.test-area { border: 1.5px solid var(--edge); border-radius: 0; clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  background:
+    linear-gradient(var(--pk2), var(--pk2)) left 12px top 12px / 26px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) left 12px top 12px / 3px 26px no-repeat,
+    linear-gradient(var(--pk2), var(--pk2)) right 12px top 12px / 26px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) right 12px top 12px / 3px 26px no-repeat,
+    linear-gradient(var(--lv), var(--lv)) left 12px bottom 12px / 26px 3px no-repeat, linear-gradient(var(--lv), var(--lv)) left 12px bottom 12px / 3px 26px no-repeat,
+    linear-gradient(var(--lv), var(--lv)) right 12px bottom 12px / 26px 3px no-repeat, linear-gradient(var(--lv), var(--lv)) right 12px bottom 12px / 3px 26px no-repeat,
+    linear-gradient(#ff8fc81a 1px, transparent 1px) center / 24px 24px, linear-gradient(90deg, #ff8fc81a 1px, transparent 1px) center / 24px 24px, #fff8fc; }
+.test-area.is-active { background:
+    linear-gradient(var(--pk2), var(--pk2)) left 12px top 12px / 34px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) left 12px top 12px / 3px 34px no-repeat,
+    linear-gradient(var(--pk2), var(--pk2)) right 12px top 12px / 34px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) right 12px top 12px / 3px 34px no-repeat,
+    linear-gradient(var(--pk2), var(--pk2)) left 12px bottom 12px / 34px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) left 12px bottom 12px / 3px 34px no-repeat,
+    linear-gradient(var(--pk2), var(--pk2)) right 12px bottom 12px / 34px 3px no-repeat, linear-gradient(var(--pk2), var(--pk2)) right 12px bottom 12px / 3px 34px no-repeat,
+    linear-gradient(#ff4fa824 1px, transparent 1px) center / 24px 24px, linear-gradient(90deg, #ff4fa824 1px, transparent 1px) center / 24px 24px, #fff0f7; }
+.area-hint::after { content: "  ·  TARGET LOCK"; color: var(--pk); letter-spacing: .12em; font-family: var(--display); font-size: 10px; }
+
+/* segmented energy bar */
+progress { -webkit-appearance: none; appearance: none; height: 10px; border: 0; background: #ffe6f2;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+progress::-webkit-progress-bar { background: repeating-linear-gradient(90deg, #ffe0ef 0 14px, #fff4fa 14px 16px); }
+progress::-webkit-progress-value { background: repeating-linear-gradient(90deg, var(--pk2) 0 14px, transparent 14px 16px); }
+progress::-moz-progress-bar { background: repeating-linear-gradient(90deg, var(--pk2) 0 14px, transparent 14px 16px); }
+
+/* metric tiles: cut corner, label tab */
+.metric { border: 0; border-radius: 0; box-shadow: inset 0 0 0 1.5px var(--edge); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  background: linear-gradient(90deg, var(--pk2), var(--pk)) left top / 40px 3px no-repeat, #fff; }
+.comparison-device { border-radius: 0; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); }
+
+/* header + footer HUD bits */
+.site-header::before { content: "LYRA SYSTEM ◆ ONLINE"; position: absolute; left: 0; bottom: 10px; font-family: var(--display); font-size: 9px; letter-spacing: .3em; color: #e2a6c8; }
+.wordmark-icon { border-radius: 0; }
+.site-footer::before { content: "◆ LYRA // "; }
+
+.buddy { --visor: #ff6fbf; }

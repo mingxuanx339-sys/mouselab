@@ -252,8 +252,8 @@ function exportImage() {
   for (const [i, device] of ['A', 'B'].entries()) {
     const x = 70 + i * 760; const s = summarize(experiment.trials, device);
     ctx.fillStyle = '#19132a'; ctx.fillRect(x, 180, 700, 440);
-    write(`${device} · ${nameOf(device)}`, x + 30, 240, 27, i ? '#7fd8ff' : '#ff5fd2', 640);
-    write(number(s.medianCps), x + 30, 365, 92, i ? '#7fd8ff' : '#ff5fd2');
+    write(`${device} · ${nameOf(device)}`, x + 30, 240, 27, i ? '#b98cff' : '#ff6ad5', 640);
+    write(number(s.medianCps), x + 30, 365, 92, i ? '#b98cff' : '#ff6ad5');
     write(t('imgMed', { n: s.roundCount }), x + 30, 415, 25);
     write(t('imgRange', { a: number(s.minCps), b: number(s.maxCps) }), x + 30, 480, 24);
     write(t('imgInt', { v: number(s.medianClickIntervalMs) }), x + 30, 530, 24);
@@ -262,7 +262,7 @@ function exportImage() {
   const a = summarize(experiment.trials, 'A'); const b = summarize(experiment.trials, 'B');
   write(a.roundCount >= 3 && b.roundCount >= 3 ? `A − B：${number(a.medianCps - b.medianCps)} CPS` : t('imgFew'), 70, 690, 30);
   write(t('imgN1'), 70, 750, 24, '#a597c4');
-  write(t('imgN2'), 70, 810, 25, '#ff5fd2');
+  write(t('imgN2'), 70, 810, 25, '#ff6ad5');
   const note = experiment.notes || t('imgNoNotes');
   for (let i = 0; i < Math.min(4, Math.ceil(note.length / 52)); i++) write(note.slice(i * 52, (i + 1) * 52), 70, 870 + i * 32, 22, '#a597c4');
   canvas.toBlob((blob) => { if (blob) download(`mouse-ab-${stamp()}.png`, blob, 'image/png'); }, 'image/png');
