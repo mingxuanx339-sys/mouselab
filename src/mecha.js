@@ -91,10 +91,8 @@ function init() {
   const code = document.getElementById('buddy-code');
   if (heroArt) heroArt.innerHTML = unitSVG();
   const MOODS = ['idle', 'prep', 'go', 'done', 'rest'];
-  MOODS.forEach((m) => { const i = new Image(); i.src = `./assets/chibi-${m}.webp`; });
-  if (buddy) buddy.innerHTML = '<img class="chibi-img" src="./assets/chibi-idle.webp" alt="" width="420" height="420">';
   const intro = document.querySelector('.intro');
-  if (intro && !document.querySelector('.hero-chibi')) intro.insertAdjacentHTML('beforeend', '<img class="hero-chibi" src="./assets/chibi-done.webp" alt="" width="420" height="420">');
+
   if (hero) hero.dataset.mood = 'idle';
 
   const status = document.getElementById('test-status');
@@ -113,7 +111,7 @@ function init() {
     else if (performance.now() < doneUntil) { mood = 'done'; line = 'done'; }
     else if (txt === t('stDone')) { mood = 'done'; line = 'all'; }
     else if (txt === t('stRest')) { mood = 'rest'; line = 'rest'; }
-    if (buddy) { buddy.dataset.mood = mood; const img = buddy.querySelector('img'); const want = `./assets/chibi-${mood}.webp`; if (img && !img.src.endsWith(want.slice(1))) img.src = want; }
+    if (buddy) buddy.dataset.mood = mood;
     document.querySelector('.capture-card')?.setAttribute('data-mood', mood);
     if (code) code.textContent = CODE[line];
     if (bubble && bubble.dataset.line !== `${line}:${getLang()}`) {
