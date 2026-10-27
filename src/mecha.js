@@ -3,7 +3,7 @@
 import { getLang, t } from './i18n.js';
 
 const LINES = {
-  name: ['机体 MX-01 · 点击测试单元', 'Unit MX-01 · Click test frame', '機体 MX-01・クリック試験ユニット'],
+  name: ['机甲少女 LYRA · MX-01', 'LYRA · MX-01 frame', '機甲少女 LYRA・MX-01'],
   hello: ['系统上线。双机对比程序已就绪。', 'Systems online. Dual-unit comparison ready.', 'システム起動。比較プログラム待機中。'],
   idle: ['待机中——按上方按钮启动。', 'Standing by — launch from the button above.', '待機中——上のボタンで起動。'],
   prep: ['充能中……3、2、1', 'Charging… 3, 2, 1', 'チャージ中…3、2、1'],
@@ -19,50 +19,66 @@ const say = (key) => LINES[key][IDX[getLang()] ?? 0];
 let uid = 0;
 export function unitSVG() {
   const p = `u${++uid}`;
+  const wing = (d) => `<path class="u-wing" d="${d}" fill="url(#${p}w)" stroke="var(--visor)" stroke-opacity=".7" stroke-width="1.2"/>`;
   return `
-<svg class="unit" viewBox="0 0 260 240" aria-hidden="true">
+<svg class="unit" viewBox="0 0 300 290" aria-hidden="true">
   <defs>
-    <linearGradient id="${p}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5560"/><stop offset="1" stop-color="#1c2228"/></linearGradient>
-    <linearGradient id="${p}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#626f7b"/><stop offset="1" stop-color="#2a3138"/></linearGradient>
-    <filter id="${p}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
-    <clipPath id="${p}v"><path d="M78 118 L130 108 L182 118 L174 134 L130 128 L86 134 Z"/></clipPath>
+    <linearGradient id="${p}w" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--visor)" stop-opacity=".85"/><stop offset="1" stop-color="var(--visor)" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${p}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#d9d0f2"/><stop offset="1" stop-color="#9d8fc4"/></linearGradient>
+    <linearGradient id="${p}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7b4dff"/><stop offset="1" stop-color="#ff5fd2"/></linearGradient>
+    <linearGradient id="${p}d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2466"/><stop offset="1" stop-color="#1a1030"/></linearGradient>
+    <filter id="${p}g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2"/></filter>
   </defs>
-  <!-- shoulders -->
-  <path d="M20 236 L34 176 L92 160 L104 236 Z" fill="url(#${p}a)" stroke="#6b7884" stroke-width="1.5"/>
-  <path d="M240 236 L226 176 L168 160 L156 236 Z" fill="url(#${p}a)" stroke="#6b7884" stroke-width="1.5"/>
-  <path d="M34 176 L92 160 L94 172 L38 188 Z" fill="var(--accent)"/>
-  <path d="M226 176 L168 160 L166 172 L222 188 Z" fill="var(--accent)"/>
-  <g stroke="#1b2026" stroke-width="5"><line x1="46" y1="210" x2="58" y2="198"/><line x1="58" y1="214" x2="70" y2="202"/><line x1="70" y1="218" x2="82" y2="206"/></g>
-  <text x="196" y="214" fill="#8d9aa6" font-size="11" font-family="monospace" text-anchor="middle">MX-01</text>
-  <!-- neck / collar -->
-  <path d="M100 236 L106 168 L154 168 L160 236 Z" fill="#20262c" stroke="#56616c"/>
-  <g stroke="#56616c"><line x1="112" y1="182" x2="148" y2="182"/><line x1="110" y1="196" x2="150" y2="196"/><line x1="108" y1="210" x2="152" y2="210"/></g>
-  <!-- side fins (swept back) -->
-  <path d="M70 104 L16 70 L28 96 L64 122 Z" fill="url(#${p}b)" stroke="#7a8794"/>
-  <path d="M190 104 L244 70 L232 96 L196 122 Z" fill="url(#${p}b)" stroke="#7a8794"/>
-  <path d="M22 76 L60 102" stroke="var(--accent)" stroke-width="3"/>
-  <path d="M238 76 L200 102" stroke="var(--accent)" stroke-width="3"/>
+  <!-- light-blade wings -->
+  <g class="u-wings">
+    <g class="u-wl">${wing('M120 178 L18 74 L34 70 L128 168 Z')}${wing('M116 188 L4 134 L18 124 L122 178 Z')}${wing('M114 200 L14 196 L22 184 L118 190 Z')}</g>
+    <g class="u-wr">${wing('M180 178 L282 74 L266 70 L172 168 Z')}${wing('M184 188 L296 134 L282 124 L178 178 Z')}${wing('M186 200 L286 196 L278 184 L182 190 Z')}</g>
+  </g>
+  <!-- halo -->
+  <ellipse class="u-halo" cx="150" cy="30" rx="46" ry="9" fill="none" stroke="var(--visor)" stroke-width="3" filter="url(#${p}g)"/>
+  <ellipse class="u-halo" cx="150" cy="30" rx="46" ry="9" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.4"/>
+  <!-- armour ribbons (twin tails) -->
+  <path d="M104 104 C76 140 70 196 82 262 L96 258 C90 206 96 156 118 120 Z" fill="url(#${p}r)"/>
+  <path d="M196 104 C224 140 230 196 218 262 L204 258 C210 206 204 156 182 120 Z" fill="url(#${p}r)"/>
+  <g stroke="#2a1745" stroke-width="2" opacity=".55"><path d="M86 168 L100 166"/><path d="M82 200 L96 200"/><path d="M84 232 L96 233"/><path d="M214 168 L200 166"/><path d="M218 200 L204 200"/><path d="M216 232 L204 233"/></g>
+  <circle cx="82" cy="262" r="5" fill="var(--visor)"/><circle cx="218" cy="262" r="5" fill="var(--visor)"/>
+  <!-- body -->
+  <path d="M138 160 L162 160 L166 196 L134 196 Z" fill="url(#${p}d)"/>
+  <path d="M96 290 C96 236 112 206 150 200 C188 206 204 236 204 290 Z" fill="url(#${p}h)"/>
+  <path d="M84 222 C96 202 118 198 128 204 C116 214 108 228 104 246 Z" fill="#efe9ff" stroke="#9d8fc4"/>
+  <path d="M216 222 C204 202 182 198 172 204 C184 214 192 228 196 246 Z" fill="#efe9ff" stroke="#9d8fc4"/>
+  <ellipse cx="150" cy="202" rx="30" ry="7" fill="none" stroke="#7b4dff" stroke-width="3"/>
+  <path d="M150 226 L162 242 L150 258 L138 242 Z" fill="var(--visor)" filter="url(#${p}g)"/>
+  <path d="M150 226 L162 242 L150 258 L138 242 Z" fill="var(--visor)"/>
+  <path d="M150 232 L156 242 L150 250 Z" fill="#fff" opacity=".7"/>
+  <path d="M118 270 C130 262 170 262 182 270" fill="none" stroke="#9d8fc4"/>
+  <!-- antenna fins -->
+  <path d="M122 66 L98 26 L104 24 L132 58 Z" fill="#efe9ff" stroke="#9d8fc4"/>
+  <path d="M178 66 L202 26 L196 24 L168 58 Z" fill="#efe9ff" stroke="#9d8fc4"/>
+  <path d="M110 40 L124 58" stroke="#ff5fd2" stroke-width="2.5"/><path d="M190 40 L176 58" stroke="#ff5fd2" stroke-width="2.5"/>
   <!-- helmet -->
-  <path d="M130 26 L176 46 L196 96 L188 150 L160 172 L100 172 L72 150 L64 96 L84 46 Z" fill="url(#${p}b)" stroke="#8a97a3" stroke-width="2"/>
-  <!-- crest -->
-  <path d="M130 8 L140 30 L134 74 L126 74 L120 30 Z" fill="#cfd6dc" stroke="#7a8794"/>
-  <path d="M130 14 L135 30 L131 66 L129 66 L125 30 Z" fill="var(--accent)" opacity=".85"/>
-  <!-- brow plates -->
-  <path d="M84 50 L124 82 L82 104 Z" fill="#3a434c" stroke="#7a8794"/>
-  <path d="M176 50 L136 82 L178 104 Z" fill="#3a434c" stroke="#7a8794"/>
+  <path d="M150 52 C188 52 208 80 206 114 C204 142 186 162 150 168 C114 162 96 142 94 114 C92 80 112 52 150 52 Z" fill="url(#${p}h)" stroke="#8f80bd" stroke-width="1.5"/>
+  <path d="M150 54 L160 72 L150 86 L140 72 Z" fill="#7b4dff"/><path d="M150 60 L155 72 L150 79 Z" fill="#fff" opacity=".7"/>
+  <g fill="none" stroke="#a99ccc" stroke-width="1.2"><path d="M112 70 C120 84 122 92 120 100"/><path d="M188 70 C180 84 178 92 180 100"/><path d="M118 142 C130 154 170 154 182 142"/></g>
+  <circle cx="96" cy="118" r="12" fill="#2a1745" stroke="#8f80bd"/><circle cx="96" cy="118" r="5" fill="var(--visor)"/>
+  <circle cx="204" cy="118" r="12" fill="#2a1745" stroke="#8f80bd"/><circle cx="204" cy="118" r="5" fill="var(--visor)"/>
   <!-- visor -->
-  <path d="M74 116 L130 104 L186 116 L176 138 L130 132 L84 138 Z" fill="#0b0f13" stroke="#8a97a3" stroke-width="1.5"/>
-  <path class="u-glow" d="M78 118 L130 108 L182 118 L174 134 L130 128 L86 134 Z" fill="var(--visor)" filter="url(#${p}g)" opacity=".9"/>
-  <path class="u-visor" d="M78 118 L130 108 L182 118 L174 134 L130 128 L86 134 Z" fill="var(--visor)" opacity=".85"/>
-  <g clip-path="url(#${p}v)"><rect class="u-scan" x="60" y="104" width="16" height="36" fill="#fff" opacity=".55"/></g>
-  <!-- faceguard -->
-  <path d="M100 146 L130 140 L160 146 L154 168 L106 168 Z" fill="#2a3138" stroke="#7a8794"/>
-  <g stroke="#7a8794" stroke-width="2"><line x1="116" y1="150" x2="116" y2="164"/><line x1="124" y1="149" x2="124" y2="166"/><line x1="136" y1="149" x2="136" y2="166"/><line x1="144" y1="150" x2="144" y2="164"/></g>
-  <!-- panel lines + rivets -->
-  <g stroke="#56616c" fill="none"><path d="M94 60 L108 140"/><path d="M166 60 L152 140"/><path d="M72 146 L96 150"/><path d="M188 146 L164 150"/></g>
-  <g fill="#9aa6b1"><circle cx="78" cy="96" r="2"/><circle cx="182" cy="96" r="2"/><circle cx="96" cy="160" r="2"/><circle cx="164" cy="160" r="2"/></g>
-  <!-- thruster flares (engage) -->
-  <g class="u-flare"><path d="M28 98 L4 112 L30 104 Z" fill="var(--visor)"/><path d="M232 98 L256 112 L230 104 Z" fill="var(--visor)"/></g>
+  <path d="M106 100 Q150 86 194 100 L190 128 Q150 142 110 128 Z" fill="#140b26" stroke="#8f80bd"/>
+  <g class="u-eyes u-open">
+    <path d="M116 114 Q128 104 142 112 Q130 124 116 114 Z" fill="var(--visor)" filter="url(#${p}g)"/>
+    <path d="M184 114 Q172 104 158 112 Q170 124 184 114 Z" fill="var(--visor)" filter="url(#${p}g)"/>
+    <path d="M116 114 Q128 104 142 112 Q130 124 116 114 Z" fill="var(--visor)"/>
+    <path d="M184 114 Q172 104 158 112 Q170 124 184 114 Z" fill="var(--visor)"/>
+    <circle cx="126" cy="111" r="2.2" fill="#fff"/><circle cx="168" cy="111" r="2.2" fill="#fff"/>
+  </g>
+  <g class="u-eyes u-sharp">
+    <path d="M114 110 L144 116 L118 118 Z" fill="var(--visor)" filter="url(#${p}g)"/><path d="M186 110 L156 116 L182 118 Z" fill="var(--visor)" filter="url(#${p}g)"/>
+    <path d="M114 110 L144 116 L118 118 Z" fill="#fff"/><path d="M186 110 L156 116 L182 118 Z" fill="#fff"/>
+  </g>
+  <g class="u-eyes u-happy" fill="none" stroke="var(--visor)" stroke-width="4" stroke-linecap="round">
+    <path d="M118 118 Q129 104 140 118"/><path d="M160 118 Q171 104 182 118"/>
+  </g>
+  <path class="u-scan" d="M108 100 L112 100 L112 130 L108 130 Z" fill="#fff" opacity=".35"/>
 </svg>`;
 }
 
