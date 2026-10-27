@@ -6,8 +6,8 @@
 }
 html:root {
   background:
-    linear-gradient(90deg, #fff0f7 0%, #fff0f7f2 36%, #fff0f7b3 56%, #fff0f733 80%, #fff0f700 100%),
-    url("./assets/mech-bg.webp") right -7vw center / auto 100% no-repeat,
+    linear-gradient(90deg, #fff0f7 0%, #fff0f7f2 30%, #fff0f799 52%, #fff0f720 78%, #fff0f700 100%),
+    url("./assets/wing-bg.webp") right top / auto 108% no-repeat,
     radial-gradient(600px 400px at 10% 10%, #ffd6ec 0%, transparent 70%),
     radial-gradient(700px 500px at 0% 90%, #eadcff 0%, transparent 70%),
     #fff0f7;
@@ -64,7 +64,7 @@ a { color: #e0408f; }
 @media (max-width: 720px) {
   html:root { background:
     linear-gradient(180deg, #fff0f7b3 0%, #fff0f7e6 35%, #fff0f7 70%),
-    url("./assets/mech-bg.webp") 60% top / 150% auto no-repeat,
+    url("./assets/wing-bg.webp") right top / 95% auto no-repeat,
     #fff0f7; background-attachment: fixed; }
 }
 
@@ -142,3 +142,19 @@ progress::-moz-progress-bar { background: repeating-linear-gradient(90deg, var(-
 .site-footer::before { content: "◆ LYRA // "; }
 
 .buddy { --visor: #ff6fbf; }
+
+/* chibi mecha buddy */
+.buddy { width: 108px; --visor: #ff5fae; }
+.chibi .u-wings { transform-origin: 100px 130px; }
+.chibi .u-open { transform-origin: 100px 85px; }
+.chibi .u-scan { animation: chibiScan 3.2s ease-in-out infinite; }
+@keyframes chibiScan { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(62px); } }
+.buddy[data-mood="idle"] .chibi, .buddy[data-mood="rest"] .chibi { animation: chibiBob 2.6s ease-in-out infinite; }
+@keyframes chibiBob { 50% { transform: translateY(-4px); } }
+.buddy[data-mood="prep"] { --visor: #ffb13d; }
+.buddy[data-mood="go"] { --visor: #ff2f8f; }
+.buddy[data-mood="done"] { --visor: #ff5fae; }
+.buddy[data-mood="rest"] { --visor: #c9a7ff; }
+.chibi .u-wl { transform-origin: 72px 130px; } .chibi .u-wr { transform-origin: 128px 130px; }
+[data-mood="go"] .chibi .u-wl { transform: rotate(-14deg); } [data-mood="go"] .chibi .u-wr { transform: rotate(14deg); }
+[data-mood="prep"] .chibi .u-wl { transform: rotate(-7deg); } [data-mood="prep"] .chibi .u-wr { transform: rotate(7deg); }
