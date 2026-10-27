@@ -158,3 +158,14 @@ progress::-moz-progress-bar { background: repeating-linear-gradient(90deg, var(-
 .chibi .u-wl { transform-origin: 72px 130px; } .chibi .u-wr { transform-origin: 128px 130px; }
 [data-mood="go"] .chibi .u-wl { transform: rotate(-14deg); } [data-mood="go"] .chibi .u-wr { transform: rotate(14deg); }
 [data-mood="prep"] .chibi .u-wl { transform: rotate(-7deg); } [data-mood="prep"] .chibi .u-wr { transform: rotate(7deg); }
+
+/* 3D figure-style chibi */
+.buddy { width: 112px; }
+.buddy .chibi-img { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 10px #ff7ac83d); }
+.buddy[data-mood="idle"] .chibi-img, .buddy[data-mood="rest"] .chibi-img { animation: chibiBob 2.6s ease-in-out infinite; }
+.buddy[data-mood="go"] .chibi-img { animation: rumble .16s linear infinite; }
+main { position: relative; }
+.hero-chibi { position: absolute; right: 2%; top: 34px; width: 250px; height: auto; pointer-events: none; filter: drop-shadow(0 14px 24px #ff7ac852); animation: chibiBob 3.2s ease-in-out infinite; }
+@media (max-width: 980px) { .hero-chibi { width: 180px; right: 0; top: 20px; opacity: .95; } }
+@media (max-width: 720px) { .hero-chibi { width: 120px; top: 6px; right: -6px; } .intro h1 { padding-right: 96px; } }
+@media (prefers-reduced-motion: reduce) { .hero-chibi, .buddy .chibi-img { animation: none !important; } }
