@@ -16,9 +16,11 @@
   --display: "Orbitron", "Rajdhani", "Noto Sans SC", sans-serif;
   --cut: 14px;
 }
-html {
+html:root {
   min-height: 100%;
   background:
+    linear-gradient(90deg, #0d0a16 0%, #0d0a16f2 40%, #0d0a16b3 60%, #0d0a1659 78%, #0d0a1633 100%),
+    url("./assets/mech-bg.webp") right center / cover no-repeat,
     radial-gradient(1000px 600px at 80% -10%, #2b1a4d 0%, transparent 60%),
     radial-gradient(800px 500px at -10% 40%, #1d1430 0%, transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M14 0h28l14 24-14 24H14L0 24z' fill='none' stroke='%23ffffff' stroke-opacity='.035'/%3E%3C/svg%3E"),
@@ -40,7 +42,7 @@ main, .site-header, .site-footer { position: relative; z-index: 1; }
 .wordmark .muted { color: var(--cyan); }
 
 /* hero */
-.intro { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: 32px; row-gap: 0; align-items: center; }
+.intro { max-width: 640px; }
 .intro > :not(.hero-unit) { grid-column: 1; }
 .hero-unit { grid-column: 2; grid-row: 1 / span 5; margin: 0; }
 .hero-unit[data-mood] { --visor: #c58bff; }
@@ -177,3 +179,13 @@ th { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }
 @media (prefers-reduced-motion: reduce) {
   .hero-unit .unit, .unit, .unit *, .test-area::before, .comm p.type { animation: none !important; }
 }
+
+/* mecha backdrop on narrow screens: centred, dimmer */
+@media (max-width: 720px) {
+  html:root { background:
+    linear-gradient(180deg, #0d0a16b3 0%, #0d0a16e6 45%, #0d0a16 100%),
+    url("./assets/mech-bg-small.webp") 70% top / auto 70vh no-repeat,
+    #0d0a16; background-attachment: fixed; }
+}
+/* cards sit on the mech: a touch of glass */
+.test-card { background: linear-gradient(180deg, #19132ae6, #110d1ce6); backdrop-filter: blur(4px); }
