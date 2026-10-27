@@ -243,17 +243,17 @@ function exportCsv() {
 function exportImage() {
   const canvas = document.createElement('canvas'); canvas.width = 1600; canvas.height = 1040;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#101715'; ctx.fillRect(0, 0, 1600, 1040);
-  const write = (text, x, y, size, color = '#eff4ee', max = 1450) => {
+  ctx.fillStyle = '#0b0e12'; ctx.fillRect(0, 0, 1600, 1040);
+  const write = (text, x, y, size, color = '#e6edf3', max = 1450) => {
     ctx.fillStyle = color; ctx.font = `${size}px "Microsoft YaHei", "Yu Gothic", "Hiragino Sans", sans-serif`; ctx.fillText(text, x, y, max);
   };
   write(t('imgTitle'), 70, 90, 40);
-  write(t('imgSub', { d: experiment.durationMs / 1000, r: experiment.restSeconds, t: new Date().toLocaleString(LOCALES[getLang()]) }), 70, 140, 24, '#99a8a0');
+  write(t('imgSub', { d: experiment.durationMs / 1000, r: experiment.restSeconds, t: new Date().toLocaleString(LOCALES[getLang()]) }), 70, 140, 24, '#8d9aa6');
   for (const [i, device] of ['A', 'B'].entries()) {
     const x = 70 + i * 760; const s = summarize(experiment.trials, device);
-    ctx.fillStyle = '#18211e'; ctx.fillRect(x, 180, 700, 440);
-    write(`${device} · ${nameOf(device)}`, x + 30, 240, 27, i ? '#94c9ff' : '#bcf279', 640);
-    write(number(s.medianCps), x + 30, 365, 92, i ? '#94c9ff' : '#bcf279');
+    ctx.fillStyle = '#161d24'; ctx.fillRect(x, 180, 700, 440);
+    write(`${device} · ${nameOf(device)}`, x + 30, 240, 27, i ? '#3fd8ff' : '#ff6a1f', 640);
+    write(number(s.medianCps), x + 30, 365, 92, i ? '#3fd8ff' : '#ff6a1f');
     write(t('imgMed', { n: s.roundCount }), x + 30, 415, 25);
     write(t('imgRange', { a: number(s.minCps), b: number(s.maxCps) }), x + 30, 480, 24);
     write(t('imgInt', { v: number(s.medianClickIntervalMs) }), x + 30, 530, 24);
@@ -261,10 +261,10 @@ function exportImage() {
   }
   const a = summarize(experiment.trials, 'A'); const b = summarize(experiment.trials, 'B');
   write(a.roundCount >= 3 && b.roundCount >= 3 ? `A − B：${number(a.medianCps - b.medianCps)} CPS` : t('imgFew'), 70, 690, 30);
-  write(t('imgN1'), 70, 750, 24, '#99a8a0');
-  write(t('imgN2'), 70, 810, 25, '#bcf279');
+  write(t('imgN1'), 70, 750, 24, '#8d9aa6');
+  write(t('imgN2'), 70, 810, 25, '#ff6a1f');
   const note = experiment.notes || t('imgNoNotes');
-  for (let i = 0; i < Math.min(4, Math.ceil(note.length / 52)); i++) write(note.slice(i * 52, (i + 1) * 52), 70, 870 + i * 32, 22, '#99a8a0');
+  for (let i = 0; i < Math.min(4, Math.ceil(note.length / 52)); i++) write(note.slice(i * 52, (i + 1) * 52), 70, 870 + i * 32, 22, '#8d9aa6');
   canvas.toBlob((blob) => { if (blob) download(`mouse-ab-${stamp()}.png`, blob, 'image/png'); }, 'image/png');
 }
 

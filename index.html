@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101715">
+  <meta name="theme-color" content="#0b0e12">
   <meta name="description" content="MouseLab 鼠标 A/B 点击实验：对比次数、点击间隔与按住时长，数据仅存本机。不是硬件触发延迟测试。">
   <title data-i18n="title">MouseLab — 鼠标点击实验室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./mecha.css">
   <script type="module" src="./src/ab-app.js"></script>
+  <script type="module" src="./src/mecha.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -16,8 +21,10 @@
   </header>
   <main>
     <section class="intro">
+      <figure class="hero-unit" id="hero-unit" aria-hidden="true"><div id="hero-unit-art"></div><div class="comm"><div class="comm-head"><span>COMM // MX-01</span><b>ONLINE</b></div><p id="hero-say"></p></div><figcaption id="hero-name"></figcaption></figure>
       <p class="eyebrow">MOUSELAB / CLICK A/B</p>
       <h1><span class="h1-plain" data-i18n="h1a">两只鼠标，</span><span data-i18n="h1b">同一个你。</span></h1>
+      <p class="h1-tag" aria-hidden="true">// 2 UNITS · 1 PILOT</p>
       <p class="intro-copy" data-i18n="introCopy">不只看点了多少次，也看点击间隔与按住时长。固定时间、交替测试，让每一轮都有记录。</p>
       <p class="measurement-limit" data-i18n="limit">这是个人点击表现测试，不是硬件触发延迟测试。网页没有记录物理动作起点，任何毫秒数都不能解释为微动响应速度。</p>
     </section>
@@ -39,6 +46,7 @@
     <section class="test-card capture-card" aria-labelledby="test-heading">
       <div class="section-heading"><div><p class="eyebrow" data-i18n="capEyebrow">02 / 连续点击</p><h2 id="test-heading"><span id="next-device">A</span></h2></div><span id="test-status" class="status" role="status" aria-live="polite" data-i18n="statusReady">准备就绪</span></div>
       <div class="controls"><button id="start-button" class="button button-primary" type="button">准备测试 A（3 秒倒计时）</button><button id="stop-button" class="button button-secondary" type="button" disabled data-i18n="stopBtn">中断本轮</button><span id="round-progress" class="controls-hint">0 / 10 轮完成</span></div>
+      <div class="buddy-row" aria-hidden="true"><div id="buddy" class="buddy" data-mood="idle"></div><div class="comm"><div class="comm-head"><span>MX-01</span><b id="buddy-code">STANDBY</b></div><p id="buddy-say"></p></div></div>
       <div id="test-area" class="test-area click-pad" tabindex="0" aria-label="连续点击区域，倒计时结束后使用鼠标左键点击" data-i18n-attr="aria-label:areaAria">
         <strong id="area-count" class="pad-number">GO</strong>
         <p id="area-title" class="area-title" data-i18n="areaIdle">从上方按钮开始下一轮</p>
