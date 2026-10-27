@@ -169,3 +169,34 @@ main { position: relative; }
 @media (max-width: 980px) { .hero-chibi { width: 180px; right: 0; top: 20px; opacity: .95; } }
 @media (max-width: 720px) { .hero-chibi { width: 120px; top: 6px; right: -6px; } .intro h1 { padding-right: 96px; } }
 @media (prefers-reduced-motion: reduce) { .hero-chibi, .buddy .chibi-img { animation: none !important; } }
+
+/* ===== LYRA corner guide ===== */
+.guide { position: fixed; right: 18px; bottom: 18px; z-index: 30; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-family: inherit; }
+.guide-bot { width: 74px; height: 74px; padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 6px 12px #ff7ac855); transition: transform .2s; }
+.guide-bot:hover { transform: translateY(-3px) scale(1.05); }
+.guide-bot:focus-visible { outline: 2px solid var(--pk); outline-offset: 4px; border-radius: 50%; }
+.guide-bot img { width: 100%; height: 100%; display: block; }
+.guide[data-mood="idle"] .guide-bot img, .guide[data-mood="rest"] .guide-bot img { animation: chibiBob 2.6s ease-in-out infinite; }
+.guide[data-mood="go"] .guide-bot img { animation: rumble .16s linear infinite; }
+.guide-bubble { margin: 0; max-width: 220px; padding: 9px 13px; background: #fff; color: #4a2440; font-size: 13px; font-weight: 600; line-height: 1.5;
+  box-shadow: inset 0 0 0 1.5px var(--edge), 0 8px 20px #ff7ac82e; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
+.guide-panel { width: min(320px, calc(100vw - 36px)); padding: 16px 16px 14px; background: #fffffff2; color: #4a2440; backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1.5px var(--edge), 0 14px 34px #ff7ac833;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); animation: pop .3s ease-out; }
+.guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.guide-title { padding: 3px 12px 3px 9px; font-size: 11px; letter-spacing: .14em; color: #fff; background: linear-gradient(90deg, var(--pk2), var(--pk)); clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 100%, 0 100%); }
+.guide-count { font-family: var(--display); font-size: 11px; color: #c084fc; letter-spacing: .1em; }
+.guide-x { margin-left: auto; border: 0; background: none; color: #b07fa3; font-size: 14px; cursor: pointer; padding: 4px; }
+.guide-step { margin: 0 0 4px; font-weight: 700; font-size: 15px; }
+.guide-text { margin: 0 0 12px; font-size: 13px; line-height: 1.65; color: #6b4060; }
+.guide-dots { display: flex; gap: 6px; margin-bottom: 12px; }
+.guide-dots i { width: 18px; height: 4px; background: #ffd6ec; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
+.guide-dots i.on { background: linear-gradient(90deg, var(--pk2), var(--pk)); }
+.guide-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.guide-actions .button { min-height: 34px; padding: 0 14px; font-size: 12px; }
+.guide-focus { clip-path: none !important; outline: 3px solid #ff8fc8; outline-offset: 6px; animation: focusPulse 1.2s ease-in-out 2; }
+@keyframes focusPulse { 50% { outline-color: #c9a7ff; outline-offset: 10px; } }
+.recording-view .guide { display: none; }
+@media (max-width: 720px) { .guide { right: 10px; bottom: 10px; } .guide-bot { width: 60px; height: 60px; } }
+@media (prefers-reduced-motion: reduce) { .guide-bot img, .guide-bubble, .guide-panel, .guide-focus { animation: none !important; } }
