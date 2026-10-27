@@ -125,3 +125,24 @@ export function computeWheel(events, { burstGapMs = 160 } = {}) {
   }
   return { events: e.length, up, down, reversals };
 }
+
+// repeat-run summary: mean, sample sd, coefficient of variation
+export function summarize(values) {
+  const v = values.filter(Number.isFinite);
+  if (!v.length) return { n: 0, mean: null, sd: null, cv: null, min: null, max: null };
+  const mean = v.reduce((a, b) => a + b, 0) / v.length;
+  const sd = v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / (v.length - 1)) : 0;
+  return { n: v.length, mean, sd, cv: mean ? sd / Math.abs(mean) : null, min: Math.min(...v), max: Math.max(...v) };
+}
+
+export function deviationPct(measured, nominal) {
+  if (!Number.isFinite(measured) || !(nominal > 0)) return null;
+  return ((measured - nominal) / nominal) * 100;
+}
+
+export function toCsv(rows) {
+  if (!rows.length) return '';
+  const cols = [...rows.reduce((s, r) => { Object.keys(r).forEach((k) => s.add(k)); return s; }, new Set())];
+  const cell = (v) => { if (v === null || v === undefined) return ''; const s = typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\n') + '\n';
+}

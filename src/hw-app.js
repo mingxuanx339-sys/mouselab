@@ -1,6 +1,6 @@
 // "04 / Hardware" section: polling rate, sensor (CPI + spikes + peak speed), chatter, slow-mo latency, force log.
 import { getLang } from './i18n.js';
-import { computeWheel, computePolling, computeCpi, computeSensor, computeChatter, framesToMs, summarizeLatency } from './hw-model.js';
+import { computeWheel, computePolling, computeCpi, computeSensor, computeChatter, framesToMs, summarizeLatency, summarize, deviationPct, toCsv } from './hw-model.js';
 
 const IDX = { zh: 0, en: 1, ja: 2 };
 const T = {
@@ -45,6 +45,16 @@ const T = {
   forceHow: ['把鼠标放在厨房秤上，秤清零，用一根手指慢慢往下按左键，记下"咔哒"触发瞬间的读数（克）。每只鼠标测 5 次。', 'Put the mouse on a kitchen scale, tare it, press the left button slowly with one finger and note the reading (g) the moment it actuates. 5 times per mouse.', 'マウスをキッチンスケールに載せて0にし、指1本で左ボタンをゆっくり押して「カチッ」と反応した瞬間の値（g）を記録。各マウス5回。'],
   grams: ['克', 'grams', 'g'], forceMed: ['中位按压力度', 'Median force', '中央値押下圧'],
   // shared
+  envH: ['测试环境（自动识别 + 手动填写）', 'Test environment (auto + manual)', 'テスト環境（自動 + 手入力）'],
+  envBrowser: ['浏览器', 'Browser', 'ブラウザ'], envOs: ['系统', 'OS', 'OS'], envHz: ['屏幕刷新率', 'Display refresh', 'リフレッシュレート'], envDpr: ['缩放比例', 'Display scaling', '表示倍率'], envRaw: ['原始事件支持', 'Raw events', 'RAWイベント'],
+  setRate: ['设定回报率', 'Set polling rate', '設定ポーリング'], setDpi: ['设定 DPI', 'Set DPI', '設定DPI'], conn: ['连接方式', 'Connection', '接続'], wired: ['有线', 'Wired', '有線'], bt: ['蓝牙', 'Bluetooth', 'Bluetooth'],
+  envNote: ['设定值按当前鼠标分别保存，用来和实测对比。', 'Settings are saved per mouse and compared with what is measured.', '設定値はマウスごとに保存され、実測と比較されます。'],
+  vsSet: ['与设定对比', 'vs setting', '設定との比較'], match: ['一致', 'matches', '一致'], mismatch: ['不一致，检查驱动设置或换 USB 口', 'does not match — check the driver or USB port', '不一致：ドライバやUSBポートを確認'],
+  dev: ['与标称偏差', 'vs nominal', '公称との差'],
+  repeat: ['多次测量', 'Repeat runs', '複数回測定'], runs: ['次', 'runs', '回'], spread: ['波动', 'spread', 'ばらつき'],
+  needMore: ['建议至少测 3 次', 'run at least 3 times', '3回以上の測定を推奨'], unstable: ['波动偏大，建议重测', 'large spread — re-test', 'ばらつき大：再測定を'], stable: ['结果稳定', 'stable', '安定'],
+  chartPoll: ['每次报告的间隔（毫秒）', 'Interval between reports (ms)', 'レポート間隔（ms）'], chartSensor: ['每次报告的移动量（红色 = 跳点）', 'Movement per report (red = spike)', 'レポートごとの移動量（赤＝飛び）'],
+  csvAll: ['导出全部记录 CSV', 'Export all records CSV', '全記録をCSVで保存'], csvRaw: ['导出最近一次原始数据 CSV', 'Export last raw data CSV', '直近のRAWデータをCSVで保存'],
   table: ['记录', 'Records', '記録'], clear: ['清空本项', 'Clear this tab', 'このタブを消去'], exportAll: ['导出硬件测试 JSON', 'Export hardware JSON', 'ハードウェアJSONを保存'],
   none: ['还没有记录', 'No records yet', 'まだ記録がありません'],
 };
@@ -62,10 +72,17 @@ function el(html) { const t = document.createElement('template'); t.innerHTML = 
 function build() {
   const sec = el(`<section id="hw" class="test-card hw-card" aria-labelledby="hw-heading">
     <p class="eyebrow" data-hw="eyebrow"></p><h2 id="hw-heading" data-hw="h"></h2><p class="detail-copy hw-lead" data-hw="lead"></p>
+    <details class="hw-env" open><summary data-hw="envH"></summary>
+      <div class="hw-env-auto" id="env-auto"></div>
+      <div class="hw-row hw-env-set">
+        <label class="hw-inline"><span data-hw="setRate"></span><select id="env-rate"><option value="">—</option>${[125, 250, 500, 1000, 2000, 4000, 8000].map((r) => `<option value="${r}">${r} Hz</option>`).join('')}</select></label>
+        <label class="hw-inline"><span data-hw="setDpi"></span><input id="env-dpi" type="number" min="50" max="64000" step="50" placeholder="800"></label>
+        <label class="hw-inline"><span data-hw="conn"></span><select id="env-conn"><option value="">—</option><option value="wired" data-hw="wired"></option><option value="2.4G">2.4G</option><option value="bt" data-hw="bt"></option></select></label>
+      </div><p class="detail-copy" data-hw="envNote"></p></details>
     <div class="hw-top"><div class="hw-tabs" role="tablist"></div>
       <label class="hw-device"><span data-hw="device"></span><select id="hw-device"><option value="A">A</option><option value="B">B</option></select></label></div>
     <div class="hw-panels"></div>
-    <div class="export-actions hw-export"><button type="button" class="button button-secondary" id="hw-export" data-hw="exportAll"></button></div>
+    <div class="export-actions hw-export"><button type="button" class="button button-primary" id="hw-csv" data-hw="csvAll"></button><button type="button" class="button button-secondary" id="hw-raw" data-hw="csvRaw" disabled></button><button type="button" class="button button-secondary" id="hw-export" data-hw="exportAll"></button></div>
   </section>`);
   document.querySelector('.notes')?.before(sec);
   const tabs = [['poll', 'tabPoll'], ['sensor', 'tabSensor'], ['buttons', 'tabBtn'], ['chatter', 'tabChat'], ['latency', 'tabLat'], ['force', 'tabForce']];
@@ -80,14 +97,14 @@ function build() {
   P('poll').innerHTML = `<p class="hw-how" data-hw="pollHow"></p>
     <div class="hw-row"><button type="button" class="button button-primary" id="poll-start" data-hw="start"></button><span class="hw-live" id="poll-live"></span></div>
     <div class="hw-pad" id="poll-pad"><strong id="poll-count">0</strong><span id="poll-hint" data-hw="pollHow"></span></div>
-    <div class="hw-metrics" id="poll-metrics"></div><p class="hw-limit" data-hw="pollLimit"></p><div class="hw-table" id="poll-table"></div>`;
+    <div class="hw-metrics" id="poll-metrics"></div><figure class="hw-fig" id="poll-fig" hidden><figcaption data-hw="chartPoll"></figcaption><canvas class="hw-chart" id="poll-chart"></canvas></figure><div class="hw-repeat" id="poll-repeat"></div><p class="hw-limit" data-hw="pollLimit"></p><div class="hw-table" id="poll-table"></div>`;
   P('sensor').innerHTML = `<p class="hw-how" data-hw="cpiHow"></p>
     <div class="hw-row"><label class="hw-inline"><span data-hw="dist"></span><input id="cpi-dist" type="number" min="1" max="50" step="0.5" value="10"></label><button type="button" class="button button-primary" id="cpi-start" data-hw="start"></button><span class="hw-live" id="cpi-live"></span></div>
-    <div class="hw-metrics" id="cpi-metrics"></div>
+    <div class="hw-metrics" id="cpi-metrics"></div><div class="hw-repeat" id="cpi-repeat"></div>
     <p class="hw-how" data-hw="swipeHow"></p>
     <div class="hw-row"><button type="button" class="button button-primary" id="sw-start" data-hw="start"></button><span class="hw-live" id="sw-live"></span></div>
     <div class="hw-pad hw-pad-lock" id="sensor-pad"><strong id="sw-count">LOCK</strong><span data-hw="swipeHow"></span></div>
-    <div class="hw-metrics" id="sw-metrics"></div><p class="hw-limit" data-hw="sensorLimit"></p><div class="hw-table" id="sensor-table"></div>`;
+    <div class="hw-metrics" id="sw-metrics"></div><figure class="hw-fig" id="sw-fig" hidden><figcaption data-hw="chartSensor"></figcaption><canvas class="hw-chart" id="sw-chart"></canvas></figure><div class="hw-repeat" id="sw-repeat"></div><p class="hw-limit" data-hw="sensorLimit"></p><div class="hw-table" id="sensor-table"></div>`;
   P('buttons').innerHTML = `<p class="hw-how" data-hw="btnHow"></p>
     <div class="hw-pad hw-btnpad" id="btn-pad"><div class="hw-keys">${['L', 'R', 'M', 'B4', 'B5'].map((k, i) => `<span class="hw-key" data-b="${i}"><b>${k}</b><i>0</i></span>`).join('')}</div>
       <div class="hw-wheel"><span><b data-hw="wUp"></b> <i id="w-up">0</i></span><span><b data-hw="wDown"></b> <i id="w-down">0</i></span><span><b data-hw="wRev"></b> <i id="w-rev">0</i></span></div></div>
@@ -117,6 +134,56 @@ const tableHtml = (head, rows) => rows.length ? `<div class="table-scroll"><tabl
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const medianOf = (xs) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b), m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
+
+// ---------- environment, charts, repeat stats ----------
+const ENV = (() => {
+  const ua = navigator.userAgent; let browser = 'Browser';
+  const m = ua.match(/Edg\/([\d]+)/) || ua.match(/OPR\/([\d]+)/) || ua.match(/Chrome\/([\d]+)/) || ua.match(/Firefox\/([\d]+)/) || ua.match(/Version\/([\d]+).*Safari/);
+  if (m) browser = (/Edg\//.test(m[0]) ? 'Edge ' : /OPR\//.test(m[0]) ? 'Opera ' : /Chrome\//.test(m[0]) ? 'Chrome ' : /Firefox\//.test(m[0]) ? 'Firefox ' : 'Safari ') + m[1];
+  const os = /Windows NT 10/.test(ua) ? 'Windows 10/11' : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /Linux/.test(ua) ? 'Linux' : /iPhone|iPad/.test(ua) ? 'iOS' : 'Unknown';
+  return { browser, os, dpr: window.devicePixelRatio || 1, refresh: null, rawEvents: 'onpointerrawupdate' in window };
+})();
+function measureRefresh() {
+  return new Promise((res) => { const t = []; const step = (now) => { t.push(now); if (t.length < 90) requestAnimationFrame(step); else { const d = t.slice(1).map((x, i) => x - t[i]).sort((a, b) => a - b); const med = d[Math.floor(d.length / 2)]; const hz = 1000 / med; const common = [60, 75, 90, 100, 120, 144, 165, 170, 180, 200, 240, 280, 360, 480, 540]; res(common.reduce((b, c) => (Math.abs(c - hz) < Math.abs(b - hz) ? c : b))); } }; requestAnimationFrame(step); });
+}
+const settings = () => store.settings || (store.settings = {});
+const envSnapshot = (d) => ({ browser: ENV.browser, os: ENV.os, refresh: ENV.refresh, dpr: ENV.dpr, rawEvents: ENV.rawEvents, set: { ...(settings()[d] || {}) } });
+const lastRaw = { poll: null, sensor: null };
+function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+
+function drawChart(canvas, values, { median: medLine = null, spikes = false } = {}) {
+  const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth || 600, H = 170;
+  canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.height = `${H}px`;
+  const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
+  if (!values.length) return;
+  const pad = { l: 44, r: 10, t: 10, b: 22 }, w = W - pad.l - pad.r, h = H - pad.t - pad.b;
+  const sorted = [...values].sort((a, b) => a - b); const top = Math.max(sorted[Math.floor(sorted.length * 0.995)] * 1.15, 1e-6);
+  const X = (i) => pad.l + (i / Math.max(values.length - 1, 1)) * w, Y = (v) => pad.t + h - Math.min(v / top, 1) * h;
+  c.strokeStyle = '#f6d3e5'; c.lineWidth = 1; c.fillStyle = '#9a6b8c'; c.font = '11px sans-serif'; c.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) { const v = (top * k) / 4, y = Y(v); c.beginPath(); c.moveTo(pad.l, y); c.lineTo(W - pad.r, y); c.stroke(); c.fillText(v < 10 ? v.toFixed(2) : v.toFixed(0), pad.l - 6, y + 4); }
+  c.textAlign = 'left'; c.fillText(`n = ${values.length}`, pad.l, H - 6);
+  if (medLine) { c.strokeStyle = '#c084fc'; c.setLineDash([4, 4]); c.beginPath(); c.moveTo(pad.l, Y(medLine)); c.lineTo(W - pad.r, Y(medLine)); c.stroke(); c.setLineDash([]); }
+  const step = Math.max(1, Math.floor(values.length / (w * 2)));
+  c.strokeStyle = '#ff4fa8'; c.lineWidth = 1.2; c.beginPath();
+  for (let i = 0; i < values.length; i += step) { const x = X(i), y = Y(values[i]); i ? c.lineTo(x, y) : c.moveTo(x, y); }
+  c.stroke();
+  if (spikes) { c.fillStyle = '#e0306f'; for (let i = 4; i < values.length - 4; i++) { const around = [...values.slice(i - 4, i), ...values.slice(i + 1, i + 5)].sort((a, b) => a - b); const m = (around[3] + around[4]) / 2; if (m >= 2 && values[i] > 5 * m && values[i] > 20) { c.beginPath(); c.arc(X(i), Y(values[i]), 3.5, 0, Math.PI * 2); c.fill(); } } }
+}
+
+function repeatLine(label, values, unit, digits, cvLimit) {
+  const s = summarize(values); if (!s.n) return '';
+  const verdict = s.n < 3 ? tr('needMore') : s.cv > cvLimit ? tr('unstable') : tr('stable');
+  const cls = s.n < 3 ? 'warn' : s.cv > cvLimit ? 'bad' : 'ok';
+  return `<span class="hw-rep ${cls}"><b>${esc(label)}</b> ${fmt(s.mean, digits)} ± ${fmt(s.sd, digits)} ${unit} · ${s.n} ${tr('runs')} · ${tr('spread')} ${fmt((s.cv || 0) * 100, 1)}% · ${verdict}</span>`;
+}
+function renderRepeats() {
+  const by = (k, d, f) => store[k].filter((r) => r.device === d).map(f);
+  const block = (id, k, f, unit, digits, cv) => { const el = document.getElementById(id); if (!el) return; const html = ['A', 'B'].map((d) => repeatLine(`${d} · ${deviceName(d)}`, by(k, d, f), unit, digits, cv)).join(''); el.innerHTML = html ? `<p class="hw-rep-h">${tr('repeat')}</p>${html}` : ''; };
+  block('poll-repeat', 'poll', (r) => r.medianHz, 'Hz', 0, 0.05);
+  block('cpi-repeat', 'cpi', (r) => r.cpi, 'CPI', 0, 0.03);
+  block('sw-repeat', 'sensor', (r) => r.peakMetersPerSecond ?? r.peakCountsPerSecond, '', 2, 0.15);
+}
+
 function renderTables() {
   const q = (id) => document.getElementById(id);
   q('poll-table').innerHTML = tableHtml([tr('device'), tr('medianHz'), tr('avgHz'), tr('nearest'), tr('stab'), tr('drops'), tr('source')],
@@ -133,6 +200,7 @@ function renderTables() {
     store.latency.map((r) => [esc(r.name), r.frames, r.fps, fmt(framesToMs(r.frames, r.fps), 1)]));
   q('lat-metrics').innerHTML = ['A', 'B'].map((d) => ls[d] ? metric(`${tr('latMed')} · ${esc(deviceName(d))}`, fmt(ls[d].medianMs, 1), `ms · n=${ls[d].n}`) : '').join('');
   q('force-table').innerHTML = tableHtml([tr('device'), tr('grams')], store.force.map((r) => [esc(r.name), fmt(r.g, 1)]));
+  renderRepeats();
   q('force-metrics').innerHTML = ['A', 'B'].map((d) => { const v = store.force.filter((r) => r.device === d).map((r) => r.g); return v.length ? metric(`${tr('forceMed')} · ${esc(deviceName(d))}`, fmt(medianOf(v), 1), `g · n=${v.length}`) : ''; }).join('');
 }
 
@@ -141,7 +209,7 @@ function applyText(sec) { sec.querySelectorAll('[data-hw]').forEach((n) => { n.t
 function init() {
   const sec = build(); const $ = (id) => document.getElementById(id);
   const dev = () => $('hw-device').value;
-  const rec = (k, obj) => { store[k].push({ device: dev(), name: deviceName(dev()), at: new Date().toISOString(), ...obj }); save(); renderTables(); };
+  const rec = (k, obj) => { store[k].push({ device: dev(), name: deviceName(dev()), at: new Date().toISOString(), env: envSnapshot(dev()), ...obj }); save(); renderTables(); };
 
   // ---------- polling ----------
   const hasRaw = 'onpointerrawupdate' in window;
@@ -156,7 +224,12 @@ function init() {
       clearInterval(tick); window.removeEventListener(type, on); $('poll-start').disabled = false; $('poll-pad').classList.remove('is-active'); $('poll-live').textContent = '';
       const r = computePolling(ts);
       if (!r.enough) { $('poll-metrics').innerHTML = `<p class="hw-limit">${tr('notEnough')}</p>`; return; }
-      $('poll-metrics').innerHTML = metric(tr('medianHz'), fmt(r.medianHz), 'Hz') + metric(tr('avgHz'), fmt(r.averageHz), 'Hz') + metric(tr('nearest'), r.nearest, 'Hz') + metric(tr('stab'), fmt(r.stability * 100), `% · ${type}`) + metric(tr('drops'), fmt(r.dropRate * 100, 2), '%');
+      const setR = +(settings()[dev()]?.rate || 0);
+      const cmp = setR ? metric(tr('vsSet'), setR === r.nearest ? '✓' : '✗', `${tr('setRate')} ${setR} Hz · ${setR === r.nearest ? tr('match') : tr('mismatch')}`) : '';
+      $('poll-metrics').innerHTML = metric(tr('medianHz'), fmt(r.medianHz), 'Hz') + metric(tr('avgHz'), fmt(r.averageHz), 'Hz') + metric(tr('nearest'), r.nearest, 'Hz') + metric(tr('stab'), fmt(r.stability * 100), `% · ${type}`) + metric(tr('drops'), fmt(r.dropRate * 100, 2), '%') + cmp;
+      const sorted = [...ts].sort((a, b) => a - b); const iv = sorted.slice(1).map((t, i) => t - sorted[i]).filter((d) => d > 0 && d <= 25);
+      lastRaw.poll = { device: dev(), name: deviceName(dev()), rows: sorted.map((t, i) => ({ index: i, timestampMs: +t.toFixed(4), intervalMs: i ? +(t - sorted[i - 1]).toFixed(4) : '' })) }; $('hw-raw').disabled = false;
+      $('poll-fig').hidden = false; drawChart($('poll-chart'), iv, { median: r.medianIntervalMs });
       rec('poll', { medianHz: r.medianHz, averageHz: r.averageHz, nearest: r.nearest, stability: r.stability, dropRate: r.dropRate, samples: r.samples, source: type });
     }, 5000);
   });
@@ -181,7 +254,9 @@ function init() {
     const finish = (e) => { if (e && e.type === 'mousedown' && e.button !== 0) return; document.removeEventListener('mousemove', move); document.removeEventListener('mousedown', finish); document.exitPointerLock?.(); pad.classList.remove('is-active'); $('cpi-live').textContent = '';
       const r = computeCpi(sx, sy, cm); if (!r || r.counts < 20) return;
       $('cpi-metrics').innerHTML = metric(tr('cpiRes'), fmt(r.cpi), 'CPI') + metric(tr('straight'), fmt(r.straightness * 100), '%') + metric(tr('raw'), raw ? '✓' : '!', raw ? tr('rawYes') : tr('rawNo'));
-      rec('cpi', { cpi: r.cpi, cm, counts: r.counts, raw }); };
+      const nom = +(settings()[dev()]?.dpi || 0); const dv = deviationPct(r.cpi, nom);
+      if (dv !== null) $('cpi-metrics').innerHTML += metric(tr('dev'), `${dv > 0 ? '+' : ''}${fmt(dv, 1)}%`, `${nom} DPI`);
+      rec('cpi', { cpi: r.cpi, cm, counts: r.counts, raw, nominalDpi: nom || null, deviationPct: dv }); };
     document.addEventListener('mousemove', move); setTimeout(() => document.addEventListener('mousedown', finish), 50);
   });
 
@@ -200,6 +275,9 @@ function init() {
       $('sw-metrics').innerHTML = metric(tr('spikes'), r.spikes, `${fmt(r.spikesPer1000, 1)} ${tr('per1000')}`) + metric(tr('rev'), r.reversals, `${fmt(r.reversalsPer1000, 1)} ${tr('per1000')}`)
         + metric(tr('peak'), r.peakMetersPerSecond ? fmt(r.peakMetersPerSecond, 2) : fmt(r.peakCountsPerSecond), r.peakMetersPerSecond ? `m/s · ${fmt(r.peakIps)} IPS` : `counts/s · ${tr('needCpi')}`);
       rec('sensor', { ...r, cpi, raw });
+      const mags = samples.map((p) => Math.hypot(p.dx, p.dy));
+      lastRaw.sensor = { device: dev(), name: deviceName(dev()), rows: samples.map((p, i) => ({ index: i, timestampMs: +p.t.toFixed(4), dx: p.dx, dy: p.dy, magnitude: +mags[i].toFixed(3) })) }; $('hw-raw').disabled = false;
+      $('sw-fig').hidden = false; drawChart($('sw-chart'), mags, { spikes: true });
     }, 5000);
   });
 
@@ -246,7 +324,19 @@ function init() {
   const syncDeviceLabels = () => { [...$('hw-device').options].forEach((o) => { o.textContent = `${o.value} · ${deviceName(o.value)}`; }); };
   ['mouse-a', 'mouse-b'].forEach((id) => $(id)?.addEventListener('input', syncDeviceLabels));
   document.getElementById('lang-select')?.addEventListener('change', () => setTimeout(() => { applyText(sec); syncDeviceLabels(); }, 0));
-  applyText(sec); syncDeviceLabels();
+  // environment: auto facts + per-mouse settings
+  const paintEnv = () => { const e = ENV; $('env-auto').innerHTML = [[tr('envBrowser'), e.browser], [tr('envOs'), e.os], [tr('envHz'), e.refresh ? `${e.refresh} Hz` : '…'], [tr('envDpr'), `${Math.round(e.dpr * 100)}%`], [tr('envRaw'), e.rawEvents ? 'pointerrawupdate ✓' : 'pointermove']].map(([k, v]) => `<span><b>${k}</b>${esc(v)}</span>`).join(''); };
+  const loadSet = () => { const st = settings()[dev()] || {}; $('env-rate').value = st.rate || ''; $('env-dpi').value = st.dpi || ''; $('env-conn').value = st.conn || ''; };
+  const saveSet = () => { const all = settings(); all[dev()] = { rate: $('env-rate').value, dpi: $('env-dpi').value, conn: $('env-conn').value }; store.settings = all; save(); };
+  ['env-rate', 'env-dpi', 'env-conn'].forEach((id) => $(id).addEventListener('change', saveSet));
+  $('hw-device').addEventListener('change', loadSet);
+  measureRefresh().then((hz) => { ENV.refresh = hz; paintEnv(); });
+  $('hw-csv').addEventListener('click', () => {
+    const rows = []; for (const k of ['poll', 'cpi', 'sensor', 'buttons', 'chatter', 'latency', 'force']) for (const r of store[k]) { const { env, ...rest } = r; rows.push({ test: k, ...rest, browser: env?.browser, os: env?.os, refreshHz: env?.refresh, scaling: env?.dpr, setRate: env?.set?.rate, setDpi: env?.set?.dpi, connection: env?.set?.conn }); }
+    download(`mouse-hw-records-${Date.now()}.csv`, toCsv(rows), 'text/csv'); });
+  $('hw-raw').addEventListener('click', () => { for (const k of ['poll', 'sensor']) { const r = lastRaw[k]; if (r) download(`mouse-raw-${k}-${r.device}-${Date.now()}.csv`, toCsv(r.rows), 'text/csv'); } });
+  window.addEventListener('resize', () => { if (lastRaw.poll && !$('poll-fig').hidden) { const iv = lastRaw.poll.rows.map((r) => r.intervalMs).filter((d) => d > 0 && d <= 25); drawChart($('poll-chart'), iv, {}); } if (lastRaw.sensor && !$('sw-fig').hidden) drawChart($('sw-chart'), lastRaw.sensor.rows.map((r) => r.magnitude), { spikes: true }); });
+  applyText(sec); syncDeviceLabels(); paintEnv(); loadSet();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

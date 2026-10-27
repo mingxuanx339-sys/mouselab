@@ -75,3 +75,17 @@ test('wheel: counts and glitch reversal', () => {
   const r = computeWheel(ev);
   assert.equal(r.down, 3); assert.equal(r.up, 2); assert.equal(r.reversals, 1);
 });
+
+import { summarize, deviationPct, toCsv } from '../src/hw-model.js';
+test('summarize repeat runs', () => {
+  const s = summarize([1000, 990, 1010]);
+  assert.equal(s.n, 3); assert.equal(s.mean, 1000); assert.equal(s.sd, 10); assert.ok(Math.abs(s.cv - 0.01) < 1e-9);
+  assert.equal(summarize([]).n, 0); assert.equal(summarize([5]).sd, 0);
+});
+test('deviation vs nominal', () => {
+  assert.equal(deviationPct(816, 800), 2);
+  assert.equal(deviationPct(800, 0), null);
+});
+test('csv quoting', () => {
+  assert.equal(toCsv([{ a: 1, b: 'x,y' }, { a: 2, c: 'he said "hi"' }]), 'a,b,c\n1,"x,y",\n2,,"he said ""hi"""\n');
+});
