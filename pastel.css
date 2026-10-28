@@ -266,3 +266,4 @@ main { position: relative; }
 .hw-metrics .metric.bad { border-top-color: #e0306f; }
 .hw-metrics .metric.bad .metric-value { color: #e0306f; }
 .hw-fig + .hw-how, .hw-repeat + .hw-how { margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--edge); }
+.hw-warn { color: #d08500; }

@@ -39,18 +39,40 @@ test('polling: idle gaps ignored, dropped reports counted', () => {
   assert.equal(computePolling(gappy).drops, 20);
 });
 
+test('polling: bursty delivery is flagged as inconsistent', () => {
+  const steadyRun = computePolling(steady(1000, 2000));
+  assert.equal(steadyRun.consistent, true);
+  // reports arriving in tight bursts every 10 ms: the median says 10000 Hz, the average says ~1000
+  const bursty = [];
+  for (let b = 0; b < 200; b++) for (let k = 0; k < 10; k++) bursty.push(b * 10 + k * 0.1);
+  const r = computePolling(bursty);
+  assert.equal(r.consistent, false);
+  assert.ok(r.agreement < 0.7);
+});
+
+test('peak speed is null, not zero, when no window spans enough time', () => {
+  const sameInstant = Array.from({ length: 200 }, (_, i) => ({ t: 0, dx: 15, dy: 0 }));
+  const r = computeSensor(sameInstant, 800);
+  assert.equal(r.peakCountsPerSecond, null);
+  assert.equal(r.peakIps, null);
+  assert.equal(r.peakMetersPerSecond, null);
+});
+
 test('polling: too few samples', () => {
   assert.equal(computePolling([1, 2, 3]).enough, false);
 });
 
-test('stability: finds dropouts in a long run', () => {
+test('stability: separates real dropouts from machine stalls', () => {
   const ts = steady(1000, 6000);
-  const holes = ts.filter((t) => !(t > 1000 && t < 1012) && !(t > 3000 && t < 3025));
+  // one real link dropout (25 ms) plus shorter pauses a busy machine produces on its own
+  const holes = ts.filter((t) => !(t > 3000 && t < 3025)
+    && !(t > 1000 && t < 1012) && !(t > 500 && t < 506) && !(t > 4200 && t < 4207));
   const r = computeStability(holes);
   assert.ok(r.enough);
-  assert.equal(r.dropoutCount, 2);
-  assert.ok(r.worstGapMs > 20);
-  assert.ok(r.lostReports > 25);
+  assert.equal(r.dropoutCount, 1, 'only gaps long enough to feel count as dropouts');
+  assert.equal(r.microStallCount, 3, 'shorter pauses are reported separately, not blamed on the mouse');
+  assert.ok(Math.abs(r.worstGapMs - 25) < 1);
+  assert.ok(r.lostReports >= 24);
   assert.ok(r.buckets.length > 10);
 });
 
@@ -92,6 +114,18 @@ test('sensor: clean swipe is clean; injected jump and reversal are caught', () =
   assert.ok(Math.abs(r.peakIps - 10000 / 1600) < 1);
 });
 
+
+test('peak speed ignores degenerate windows with no elapsed time', () => {
+  // browsers can deliver coalesced reports sharing one timestamp: that must not invent a speed
+  const burst = Array.from({ length: 300 }, (_, i) => ({ t: Math.floor(i / 50), dx: 20, dy: 0 }));
+  const r = computeSensor(burst, 800);
+  assert.ok(r.enough);
+  assert.ok(r.peakCountsPerSecond < 1e5, `peak ${r.peakCountsPerSecond} should stay sane`);
+  // a properly timed stream still reports its real speed
+  const clean = Array.from({ length: 300 }, (_, i) => ({ t: i, dx: 20, dy: 0 }));
+  assert.ok(Math.abs(computeSensor(clean, 800).peakCountsPerSecond - 20000) < 500);
+});
+
 test('smoothing: a filtered stream reads smoother than a raw one', () => {
   const raw = swipe(600, 25, { jitter: 0.5, seed: 11 });
   const filtered = raw.map((p, i, a) => {
@@ -128,6 +162,19 @@ test('malfunction speed: counts collapse marks the limit', () => {
   const clean = computeMalfunction([{ peakIps: 50, counts: 8000 }, { peakIps: 300, counts: 7900 }]);
   assert.equal(clean.reached, false);
   assert.equal(clean.verifiedUpToIps, 300);
+  assert.equal(clean.inconsistentRuns, 0);
+});
+
+test('malfunction: a longer swipe is not mistaken for a clean pass', () => {
+  // the hand covered more ground on the fast runs, so those runs prove nothing about tracking
+  const r = computeMalfunction([
+    { peakIps: 40, counts: 8000 }, { peakIps: 90, counts: 8050 },
+    { peakIps: 160, counts: 14000 }, { peakIps: 220, counts: 15000 },
+  ]);
+  assert.equal(r.inconsistentRuns, 2);
+  assert.equal(r.verifiedUpToIps, 90);
+  assert.equal(r.reached, false);
+  assert.equal(r.usable, true);
 });
 
 test('static drift: a still mouse should report nothing', () => {

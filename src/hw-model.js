@@ -59,20 +59,30 @@ export function computePolling(timestamps, { idleGapMs = 25 } = {}) {
     nearest: nearestStandardRate(Math.max(medianHz, averageHz)),
     stability: within, movingMs, drops, dropRate: drops / (intervals.length + drops),
     worstGapMs: Math.max(...intervals),
+    // A trustworthy run has a median and an average that agree. When they do not, reports are
+    // arriving in bursts (coalesced delivery, a stalled page, a flaky link) and no single number
+    // describes the rate honestly.
+    consistent: medianHz > 0 && averageHz > 0 && Math.max(medianHz / averageHz, averageHz / medianHz) <= 1.5,
+    agreement: medianHz > 0 && averageHz > 0 ? Math.min(medianHz, averageHz) / Math.max(medianHz, averageHz) : null,
   };
 }
 
 // connection health over a long run: rate per window + gaps where reports stopped while the hand kept moving
-export function computeStability(timestamps, { windowMs = 250, gapFactor = 4, idleGapMs = 25 } = {}) {
+export function computeStability(timestamps, { windowMs = 250, gapFactor = 4, idleGapMs = 25, dropoutMs = 20 } = {}) {
   const ts = timestamps.filter(Number.isFinite).sort((a, b) => a - b);
   if (ts.length < 50) return { enough: false, samples: ts.length };
   const base = computePolling(ts, { idleGapMs });
   if (!base.enough) return { enough: false, samples: ts.length };
   const slot = base.medianIntervalMs;
-  const dropouts = [];
+  // Two tiers, because a browser cannot tell "the mouse went quiet" from "the page was busy".
+  // Short stalls are mostly the machine (GC, compositing, another app) and would wrongly blame
+  // the mouse if counted as dropouts. Only gaps long enough to feel are reported as dropouts.
+  const dropouts = [], microStalls = [];
   for (let i = 1; i < ts.length; i++) {
     const d = ts[i] - ts[i - 1];
-    if (d > Math.max(slot * gapFactor, 3) && d <= idleGapMs * 40) dropouts.push({ atMs: ts[i - 1] - ts[0], gapMs: d, lostReports: Math.max(1, Math.round(d / slot) - 1) });
+    if (d <= Math.max(slot * gapFactor, 3) || d > idleGapMs * 40) continue;
+    const entry = { atMs: ts[i - 1] - ts[0], gapMs: d, lostReports: Math.max(1, Math.round(d / slot) - 1) };
+    if (d >= Math.max(dropoutMs, slot * 20)) dropouts.push(entry); else microStalls.push(entry);
   }
   const t0 = ts[0], span = ts[ts.length - 1] - t0;
   const buckets = [];
@@ -81,10 +91,12 @@ export function computeStability(timestamps, { windowMs = 250, gapFactor = 4, id
     buckets.push({ atMs: start, hz: (n / windowMs) * 1000 });
   }
   const active = buckets.filter((b) => b.hz > base.medianHz * 0.2);
+  const all = [...dropouts, ...microStalls];
   return {
     enough: true, samples: ts.length, spanMs: span, medianHz: base.medianHz, nearest: base.nearest,
     buckets, dropouts, dropoutCount: dropouts.length,
-    worstGapMs: dropouts.length ? Math.max(...dropouts.map((d) => d.gapMs)) : (base.worstGapMs ?? null),
+    microStalls, microStallCount: microStalls.length,
+    worstGapMs: all.length ? Math.max(...all.map((d) => d.gapMs)) : (base.worstGapMs ?? null),
     lostReports: dropouts.reduce((a, d) => a + d.lostReports, 0),
     activeMedianHz: median(active.map((b) => b.hz)),
     dropoutsPerMinute: span > 0 ? (dropouts.length / span) * 60000 : null,
@@ -152,20 +164,24 @@ export function computeSensor(samples, cpi = null, { windowMs = 10 } = {}) {
     const m = median([...mag.slice(i - 4, i), ...mag.slice(i + 1, i + 5)]);
     if (m >= 2 && mag[i] > 5 * m && mag[i] > 20) clean[i] = m;
   }
-  let peak = 0, j = 0, acc = 0;
+  // A window is only usable if it really spans time. Browsers deliver coalesced reports that can
+  // share a timestamp, and dividing by a near-zero span would invent a speed the mouse never reached.
+  let peak = null, j = 0, acc = 0;
+  const minSpan = windowMs * 0.6;
   for (let i = 0; i < s.length; i++) {
     acc += clean[i];
     while (s[i].t - s[j].t > windowMs) { acc -= clean[j]; j++; }
-    const span = Math.max(s[i].t - s[j].t, 1);
-    if (i - j >= 3) peak = Math.max(peak, ((acc - clean[j]) / span) * 1000);
+    const span = s[i].t - s[j].t;
+    if (i - j >= 3 && span >= minSpan) peak = Math.max(peak ?? 0, ((acc - clean[j]) / span) * 1000);
   }
 
   const perK = (n) => (n / s.length) * 1000;
   return {
     samples: s.length, enough: true, spikes, reversals,
     spikesPer1000: perK(spikes), reversalsPer1000: perK(reversals),
-    peakCountsPerSecond: peak, peakMetersPerSecond: cpi ? (peak / cpi) * 0.0254 : null,
-    peakIps: cpi ? peak / cpi : null,
+    peakCountsPerSecond: peak,
+    peakMetersPerSecond: peak !== null && cpi ? (peak / cpi) * 0.0254 : null,
+    peakIps: peak !== null && cpi ? peak / cpi : null,
     smoothing: computeSmoothing(s), tail: computeStopTail(s),
   };
 }
@@ -220,14 +236,24 @@ export function computeMalfunction(runs, { tolerance = 0.1 } = {}) {
     .sort((a, b) => a.peakIps - b.peakIps);
   if (r.length < 2) return { enough: false, runs: r.length };
   const baseline = median(r.slice(0, Math.max(1, Math.ceil(r.length / 3))).map((x) => x.counts));
-  const scored = r.map((x) => ({ ...x, ratio: x.counts / baseline, ok: x.counts >= baseline * (1 - tolerance) }));
-  const firstBad = scored.find((x) => !x.ok) || null;
-  const lastGood = [...scored].reverse().find((x) => x.ok) || null;
+  // Three outcomes per run. "short" is the real finding: the hand covered the same distance but
+  // the sensor reported less, so it lost tracking. "long" means the hand simply travelled further,
+  // which says nothing about the sensor and must not be read as a pass.
+  const scored = r.map((x) => {
+    const ratio = x.counts / baseline;
+    const state = ratio < 1 - tolerance ? 'short' : ratio > 1 + tolerance ? 'long' : 'ok';
+    return { ...x, ratio, state, ok: state === 'ok' };
+  });
+  const firstBad = scored.find((x) => x.state === 'short') || null;
+  const lastGood = [...scored].filter((x) => x.state === 'ok').pop() || null;
+  const inconsistent = scored.filter((x) => x.state === 'long').length;
   return {
     enough: true, runs: scored.length, baselineCounts: baseline, scored,
     malfunctionIps: firstBad ? firstBad.peakIps : null,
     verifiedUpToIps: lastGood ? lastGood.peakIps : null,
     reached: Boolean(firstBad),
+    inconsistentRuns: inconsistent,
+    usable: scored.length - inconsistent >= 2,
   };
 }
 

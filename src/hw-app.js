@@ -11,15 +11,15 @@ const IDX = { zh: 0, en: 1, ja: 2 };
 const T = {
   eyebrow: ['04 / 硬件实验室', '04 / Hardware lab', '04 / ハードウェアラボ'],
   h: ['传感器响应与延迟', 'Sensor response and latency', 'センサー応答と遅延'],
-  lead: ['这一节测的是鼠标本身：传感器怎么报数据、有没有被厂商做过平滑和加速、什么速度下会丢帧、微动和延迟如何。每项都写明测得到什么、测不到什么。',
-    'This section looks at the mouse itself: how the sensor reports, whether the vendor smooths or accelerates it, at what speed it loses tracking, and how the switch and latency behave. Each tab states what it can and cannot measure.',
-    'このセクションはマウス本体を測ります：センサーの報告の仕方、メーカーによる平滑化や加速の有無、どの速度でトラッキングが外れるか、スイッチと遅延の挙動。各タブに測れること・測れないことを明記しています。'],
+  lead: ['这一节测的是鼠标本身：传感器怎么报数据、有没有被厂商做过平滑和加速、什么速度下会丢帧、微动和延迟如何。按标号顺序做，因为后面的速度要靠第一步的 DPI 换算。每项都写明测得到什么、测不到什么。',
+    'This section looks at the mouse itself: how the sensor reports, whether the vendor smooths or accelerates it, at what speed it loses tracking, and how the switch and latency behave. Follow the numbered order — every speed below is converted with the DPI from step one. Each tab states what it can and cannot measure.',
+    'このセクションはマウス本体を測ります：センサーの報告の仕方、メーカーによる平滑化や加速の有無、どの速度でトラッキングが外れるか、スイッチと遅延の挙動。以降の速度は①のDPIで換算するため番号順に進めてください。各タブに測れること・測れないことを明記しています。'],
   device: ['当前鼠标', 'Mouse', 'マウス'],
   // tabs
-  tabCurve: ['传感器曲线', 'Sensor curve', 'センサー曲線'],
+  tabCurve: ['② 传感器曲线', '② Sensor curve', '② センサー曲線'],
   tabDrift: ['静态抖动', 'Static drift', '静止時ドリフト'],
-  tabCal: ['DPI·加速度·吸附', 'DPI · accel · snap', 'DPI・加速・吸着'],
-  tabMal: ['极速丢帧', 'Malfunction speed', '破綻速度'],
+  tabCal: ['① DPI·加速度·吸附', '① DPI · accel · snap', '① DPI・加速・吸着'],
+  tabMal: ['③ 极速丢帧', '③ Malfunction speed', '③ 破綻速度'],
   tabPoll: ['回报率·稳定性', 'Polling · stability', 'ポーリング・安定性'],
   tabSwitch: ['微动响应', 'Switch response', 'スイッチ応答'],
   tabPhys: ['抬升·按压力度', 'Lift-off · force', 'リフトオフ・押下圧'],
@@ -53,6 +53,8 @@ const T = {
   curveChart: ['每次报告的移动量（红点 = 异常跳点）', 'Movement per report (red = spike)', 'レポートごとの移動量（赤＝飛び）'],
   smoothT: ['平滑处理', 'Smoothing', '平滑化'], roughT: ['曲线粗糙度', 'Curve roughness', '曲線の粗さ'],
   smRaw: ['未平滑（曲线锯齿明显）', 'raw (jagged curve)', '未平滑（ギザギザ）'],
+  smRawS: ['未平滑', 'Raw', '未平滑'], smMildS: ['轻度平滑', 'Mild', '軽度'], smSmoothedS: ['明显平滑', 'Smoothed', '平滑化あり'],
+  roughScale: ['< 0.18 平滑 · > 0.35 未平滑', '< 0.18 smoothed · > 0.35 raw', '< 0.18 平滑 ・ > 0.35 未平滑'],
   smMild: ['轻度平滑', 'mild smoothing', '軽度の平滑化'],
   smSmoothed: ['明显平滑（厂商做了滤波）', 'smoothed (vendor filtering)', '明確な平滑化（メーカー側フィルタ）'],
   tailT: ['停手拖尾', 'Motion tail', '停止後の尾'],
@@ -73,15 +75,15 @@ const T = {
     'Glass, glossy, very dark or patterned surfaces confuse sensors. If the number is high, retest on another pad before blaming the mouse.',
     'ガラス・光沢・濃色・柄物のパッドはセンサーを誤認させます。値が高い場合はまず別のパッドで再測定を。'],
   // calibration
-  calHow1: ['DPI 核对：桌上放一把尺子，填好距离后锁定，沿尺子把鼠标**慢慢**平移这个距离，然后按左键结束。',
-    'DPI check: put a ruler on the desk, enter the distance, lock, slide the mouse **slowly** along the ruler for exactly that distance, then left-click to finish.',
-    'DPI確認：机に定規を置き距離を入力、ロック後その距離だけ**ゆっくり**水平移動して左クリックで終了。'],
-  calHow2: ['加速度检测：同样的距离再做一次，但这次**用力快速**移动。如果鼠标没有内置加速，两次算出来的 DPI 应该几乎一样；快的那次明显更高，说明厂商加了加速或预测。',
-    'Acceleration check: repeat the same distance, but **fast**. With no built-in acceleration both runs give nearly the same DPI. A higher value on the fast run means the vendor added acceleration or prediction.',
-    '加速検出：同じ距離を今度は**速く**動かします。内蔵加速がなければ両者のDPIはほぼ同じ。速い方が明確に高ければ加速・予測が入っています。'],
-  calHow3: ['角度吸附检测：锁定后，**徒手**沿尺子画一条尽量笔直的水平线，走慢一点。人手不可能画出完全笔直的线，如果纵向分量被强行归零，说明鼠标在偷偷修直你的轨迹。',
-    'Angle-snapping check: lock, then draw one slow, as-straight-as-you-can horizontal line **freehand**. A human hand cannot draw a perfect line; if the vertical component is forced to zero, the mouse is straightening your path for you.',
-    '角度吸着の検出：ロック後、定規に沿って**手で**できるだけまっすぐ水平にゆっくり線を引きます。人間の手で完全な直線は引けないため、縦成分が強制的に0になるなら軌跡が補正されています。'],
+  calHow1: ['DPI 核对：桌上放一把尺子，填好距离后锁定，沿尺子把鼠标慢慢平移这个距离，然后按左键结束。',
+    'DPI check: put a ruler on the desk, enter the distance, lock, slide the mouse slowly along the ruler for exactly that distance, then left-click to finish.',
+    'DPI確認：机に定規を置き距離を入力、ロック後その距離だけゆっくり水平移動して左クリックで終了。'],
+  calHow2: ['加速度检测：同样的距离再做一次，但这次用力快速移动。如果鼠标没有内置加速，两次算出来的 DPI 应该几乎一样；快的那次明显更高，说明厂商加了加速或预测。',
+    'Acceleration check: repeat the same distance, but fast. With no built-in acceleration both runs give nearly the same DPI. A higher value on the fast run means the vendor added acceleration or prediction.',
+    '加速検出：同じ距離を今度は速く動かします。内蔵加速がなければ両者のDPIはほぼ同じ。速い方が明確に高ければ加速・予測が入っています。'],
+  calHow3: ['角度吸附检测：锁定后，徒手沿尺子画一条尽量笔直的水平线，走慢一点。人手不可能画出完全笔直的线，如果纵向分量被强行归零，说明鼠标在偷偷修直你的轨迹。',
+    'Angle-snapping check: lock, then draw one slow, as-straight-as-you-can horizontal line freehand. A human hand cannot draw a perfect line; if the vertical component is forced to zero, the mouse is straightening your path for you.',
+    '角度吸着の検出：ロック後、定規に沿って手でできるだけまっすぐ水平にゆっくり線を引きます。人間の手で完全な直線は引けないため、縦成分が強制的に0になるなら軌跡が補正されています。'],
   slow: ['慢速', 'Slow', 'ゆっくり'], fast: ['快速', 'Fast', '速く'], line: ['画直线', 'Draw a line', '直線を引く'],
   dist: ['移动距离（厘米）', 'Distance (cm)', '移動距離（cm）'],
   cpiRes: ['实测 CPI', 'Measured CPI', '実測CPI'], dev: ['与标称偏差', 'vs nominal', '公称との差'], raw: ['原始输入', 'Raw input', 'RAW入力'],
@@ -90,6 +92,7 @@ const T = {
   accelT: ['内置加速', 'Built-in acceleration', '内蔵加速'],
   accNone: ['无（快慢一致）', 'none (slow = fast)', 'なし（速度不変）'], accPos: ['有正向加速：移动越快走得越远', 'positive: faster hand travels further', '正の加速：速く動かすほど多く進む'], accNeg: ['有负向加速：移动越快走得越近', 'negative: faster hand travels less', '負の加速：速く動かすほど少なく進む'],
   snapT: ['角度吸附', 'Angle snapping', '角度吸着'], snapZero: ['纵向归零比例', 'zero-Y reports', '縦成分ゼロの割合'],
+  snapRun: ['最长连续归零', 'longest zero run', '最長の連続ゼロ'],
   snNone: ['没有吸附', 'none', 'なし'], snSus: ['可疑，建议重测', 'suspect — retest', '疑わしい：再測定を'], snYes: ['存在吸附 / 轨迹修直', 'snapping / path straightening', '吸着・軌跡補正あり'],
   calLimit: ['DPI 核对的误差主要来自手移动得准不准，一般在几个百分点；重复 3 次看波动更可靠。角度吸附只对水平或垂直方向有效，斜向画线测不出来。',
     'The CPI number is limited by how precisely your hand moves — usually a few percent; repeat three times and watch the spread. Angle snapping only applies to horizontal and vertical motion, so a diagonal line will not reveal it.',
@@ -101,10 +104,15 @@ const T = {
   malRun: ['记录一次', 'Record a run', '1回記録'],
   malBase: ['基准计数', 'Baseline counts', '基準カウント'], malOk: ['已验证到', 'Verified up to', '確認済み'], malBad: ['开始丢帧', 'Loses tracking at', '破綻開始'],
   malNot: ['还没测到极限，继续加快', 'limit not reached — go faster', '限界未到達：さらに速く'],
+  malLong: ['次距离偏长，这几次不算数：每次都要走完同一段距离', 'runs covered more ground and do not count: keep the distance identical every time', '回は距離が長く無効：毎回同じ距離を動かしてください'],
   malLimit: ['测的是"这只鼠标在你的垫子上，能跟上多快的手速"。换个垫子结果会变。要测到极限，手速得真的够快；没丢帧只能说明"至少到这个速度都正常"。',
     'This measures how fast a hand this mouse can follow on your pad. Change the pad and the number changes. Reaching the limit needs a genuinely fast hand; no collapse only proves "clean at least up to this speed".',
     'このマウスがあなたのパッド上でどれだけ速い手の動きに追従できるかを測ります。パッドを変えれば値も変わります。限界到達には本当に速い手が必要で、破綻がなければ「少なくともこの速度までは正常」という意味です。'],
   ips: ['英寸/秒', 'IPS', 'IPS'],
+  noPeak: ['本次没测到有效速度，请甩得更连贯一些', 'no usable speed this run — swipe more continuously', '有効な速度が取れません：もっと連続的に振ってください'],
+  needCpiFirst: ['请先在"DPI·加速度·吸附"里做一次 DPI 核对，否则速度无法换算成英寸/秒', 'Run the DPI check first — without it speed cannot be converted to inches per second', '先に「DPI」タブで確認してください。なければ速度をIPSに換算できません'],
+  unreliable: ['读数不可信：报告是成串到达的，可能是后台卡顿或连接不稳。关掉后台程序、换个 USB 口再测一次。', 'Unreliable reading: reports arrived in bursts, which points to background stalls or a flaky link. Close background apps, change USB port and retry.', '信頼できない測定：レポートがバースト到着しています。常駐ソフトを終了し、USBポートを変えて再測定を。'],
+  agree: ['一致度', 'Agreement', '一致度'],
   // polling
   pollHow: ['短测：锁定后快速画圈 5 秒，测实际回报率。',
     'Short run: lock and move in fast circles for 5 s to read the real report rate.',
@@ -116,14 +124,16 @@ const T = {
   nearest: ['最接近档位', 'Closest setting', '最も近い設定'], stab: ['稳定度', 'Stability', '安定度'], drops: ['丢包率', 'Drop rate', 'ドロップ率'],
   chartPoll: ['每次报告的间隔（毫秒），紫线 = 中位数', 'Interval between reports (ms), purple = median', 'レポート間隔（ms）、紫＝中央値'],
   chartStab: ['30 秒内的回报率变化（每 250 毫秒一格）', 'Report rate across 30 s (per 250 ms)', '30秒間のレートの推移（250msごと）'],
-  dropouts: ['断流次数', 'Dropouts', '途切れ回数'], worstGap: ['最长断流', 'Longest gap', '最長の途切れ'], lost: ['丢失报告', 'Reports lost', '欠落レポート'],
+  dropouts: ['断流次数', 'Dropouts', '途切れ回数'], worstGap: ['最长间断', 'Longest gap', '最長の途切れ'], lost: ['丢失报告', 'Reports lost', '欠落レポート'],
+  micro: ['机器卡顿', 'Machine stalls', 'マシン由来の停滞'],
+  microNote: ['短暂停顿，多半是电脑忙，不算鼠标的问题', 'short pauses — usually the computer being busy, not the mouse', '短い停滞：多くはPC側の負荷でマウスの問題ではありません'],
   pollLimit: ['测的是浏览器实际收到的报告频率。8K 这类高回报率会受浏览器、系统负载和 USB 接口限制，读数偏低时先换 USB 口、关掉后台软件再测，不一定是鼠标的问题。',
     'This is the rate the browser actually receives. 8K and other high rates can be capped by the browser, system load or the USB port; if it reads low, change port and close background apps before blaming the mouse.',
     'ブラウザが実際に受信したレートです。8Kなどはブラウザ・負荷・USBポートに制限されます。低い場合はポート変更と常駐ソフト終了を試してください。'],
   // switch
-  dbHow: ['按住节奏测试：在框里用一根手指**尽可能快**地连点 10 秒。会记录每次"松开到再次按下"的最短间隔——这是这只鼠标去抖时间的上限。去抖时间越长，连点时越容易丢点。',
-    'Rapid-click test: single-finger, click **as fast as you physically can** for 10 s. It records the shortest release-to-press gap the mouse ever reported, which is an upper bound on its debounce timer. A long debounce drops clicks when you spam.',
-    '連打テスト：枠内で指1本、**できる限り速く**10秒間連打します。「離してから次に押されるまで」の最短間隔を記録し、これがデバウンス時間の上限になります。長いと連打時にクリックが落ちます。'],
+  dbHow: ['按住节奏测试：在框里用一根手指尽可能快地连点 10 秒。会记录每次"松开到再次按下"的最短间隔——这是这只鼠标去抖时间的上限。去抖时间越长，连点时越容易丢点。',
+    'Rapid-click test: single-finger, click as fast as you physically can for 10 s. It records the shortest release-to-press gap the mouse ever reported, which is an upper bound on its debounce timer. A long debounce drops clicks when you spam.',
+    '連打テスト：枠内で指1本、できる限り速く10秒間連打します。「離してから次に押されるまで」の最短間隔を記録し、これがデバウンス時間の上限になります。長いと連打時にクリックが落ちます。'],
   chatHow: ['连击检测：每次只点一下，慢慢点 30 次。如果一次按下被记成两次，会标红。微动老化最早就是这个症状。',
     'Chatter check: single-click slowly, 30 times. A press that registers twice is flagged in red — the first symptom of a worn switch.',
     'チャタリング検出：1回ずつゆっくり30回クリック。1回の押下が2回登録されると赤く表示されます。スイッチ劣化の初期症状です。'],
@@ -248,7 +258,8 @@ function drawChart(canvas, values, { medianLine = null, spikes = false, xLabel =
 }
 
 // ---------------------------------------------------------------- build
-const TABS = [['curve', 'tabCurve'], ['drift', 'tabDrift'], ['cal', 'tabCal'], ['mal', 'tabMal'], ['poll', 'tabPoll'], ['switch', 'tabSwitch'], ['phys', 'tabPhys']];
+// Order matters: the DPI check comes first because every speed figure below is converted with it.
+const TABS = [['cal', 'tabCal'], ['curve', 'tabCurve'], ['mal', 'tabMal'], ['poll', 'tabPoll'], ['drift', 'tabDrift'], ['switch', 'tabSwitch'], ['phys', 'tabPhys']];
 
 function build() {
   const sec = el(`<section id="hw" class="test-card hw-card" aria-labelledby="hw-heading">
@@ -370,27 +381,38 @@ function repeatLine(label, values, unit, digits, cvLimit) {
   return `<span class="hw-rep ${cls}"><b>${esc(label)}</b> ${fmt(s.mean, digits)} ± ${fmt(s.sd, digits)} ${unit} · ${s.n} ${tr('runs')} · ${tr('spread')} ${fmt((s.cv || 0) * 100, 1)}% · ${verdict}</span>`;
 }
 function renderRepeats() {
-  const block = (id, k, f, unit, digits, cv) => {
+  const block = (id, k, f, unit, digits, cv, keep = () => true) => {
     const node = document.getElementById(id); if (!node) return;
-    const html = ['A', 'B'].map((d) => repeatLine(`${d} · ${deviceName(d)}`, store[k].filter((r) => r.device === d).map(f), unit, digits, cv)).join('');
+    const html = ['A', 'B'].map((d) => repeatLine(`${d} · ${deviceName(d)}`, store[k].filter((r) => r.device === d && keep(r)).map(f), unit, digits, cv)).join('');
     node.innerHTML = html ? `<p class="hw-rep-h">${tr('repeat')}</p>${html}` : '';
   };
   block('poll-repeat', 'poll', (r) => r.medianHz, 'Hz', 0, 0.05);
-  block('cal-repeat', 'cpi', (r) => r.cpi, 'CPI', 0, 0.03);
-  block('curve-repeat', 'curve', (r) => r.peakIps ?? r.peakCountsPerSecond, tr('ips'), 1, 0.2);
+  block('cal-repeat', 'cpi', (r) => r.cpi, `CPI · ${tr('slow')}`, 0, 0.03, (r) => r.mode !== 'fast');
+  block('curve-repeat', 'curve', (r) => r.peakIps, tr('ips'), 1, 0.2);
 }
 
 function renderTables() {
   const q = (id) => document.getElementById(id);
-  const smv = (v) => ({ raw: tr('smRaw'), mild: tr('smMild'), smoothed: tr('smSmoothed') }[v] || '—');
+  const smv = (v) => ({ raw: tr('smRawS'), mild: tr('smMildS'), smoothed: tr('smSmoothedS') }[v] || '—');
   if (q('curve-table')) q('curve-table').innerHTML = tableHtml([tr('device'), tr('smoothT'), tr('roughT'), tr('spikes'), tr('rev'), tr('tailT'), tr('peak')],
-    store.curve.map((r) => [esc(r.name), smv(r.smoothVerdict), fmt(r.roughness, 2), `${r.spikes} (${fmt(r.spikesPer1000, 1)}‰)`, `${r.reversals} (${fmt(r.reversalsPer1000, 1)}‰)`, `${fmt(r.tailMs, 0)} ms`, r.peakIps ? `${fmt(r.peakIps, 1)} ${tr('ips')}` : `${fmt(r.peakCountsPerSecond)} c/s`]));
+    store.curve.map((r) => [esc(r.name), smv(r.smoothVerdict), fmt(r.roughness, 2), `${r.spikes} (${fmt(r.spikesPer1000, 1)}‰)`, `${r.reversals} (${fmt(r.reversalsPer1000, 1)}‰)`, `${fmt(r.tailMs, 0)} ms`, r.peakIps ? `${fmt(r.peakIps, 1)} ${tr('ips')}` : r.peakCountsPerSecond ? `${fmt(r.peakCountsPerSecond)} c/s` : '—']));
   if (q('drift-table')) q('drift-table').innerHTML = tableHtml([tr('device'), tr('driftCounts'), tr('driftNet'), tr('driftPerMin'), tr('surface')],
     store.drift.map((r) => [esc(r.name), r.counts ? `<b class="hw-bad">${fmt(r.counts, 0)}</b>` : '0', fmt(r.netCounts, 0), fmt(r.countsPerMinute, 1), esc(r.env?.set?.pad || '—')]));
   if (q('cal-table')) q('cal-table').innerHTML = tableHtml([tr('device'), tr('cpiRes'), tr('slow') + '/' + tr('fast'), tr('dist'), tr('dev'), tr('raw')],
     store.cpi.map((r) => [esc(r.name), fmt(r.cpi, 0), r.mode === 'fast' ? tr('fast') : tr('slow'), `${r.cm} cm`, r.deviationPct === null || r.deviationPct === undefined ? '—' : `${r.deviationPct > 0 ? '+' : ''}${fmt(r.deviationPct, 1)}%`, r.raw ? '✓' : '!']));
-  if (q('mal-table')) q('mal-table').innerHTML = tableHtml([tr('device'), tr('peak'), 'counts', tr('dist')],
-    store.mal.map((r) => [esc(r.name), `${fmt(r.peakIps, 1)} ${tr('ips')}`, fmt(r.counts, 0), `${r.cm} cm`]));
+  if (q('mal-table')) {
+    const states = {};
+    for (const d of ['A', 'B']) {
+      const m = computeMalfunction(store.mal.filter((x) => x.device === d));
+      if (m.enough) m.scored.forEach((x) => { states[`${d}|${x.at}`] = x.state; });
+    }
+    q('mal-table').innerHTML = tableHtml([tr('device'), tr('peak'), 'counts', tr('dist')],
+      store.mal.map((r) => {
+        const st = states[`${r.device}|${r.at}`];
+        const mark = st === 'short' ? ' <b class="hw-bad">↓</b>' : st === 'long' ? ' <b class="hw-warn">↑</b>' : '';
+        return [esc(r.name), `${fmt(r.peakIps, 1)} ${tr('ips')}`, `${fmt(r.counts, 0)}${mark}`, `${r.cm} cm`];
+      }));
+  }
   if (q('poll-table')) q('poll-table').innerHTML = tableHtml([tr('device'), tr('medianHz'), tr('avgHz'), tr('nearest'), tr('stab'), tr('drops'), tr('envRaw')],
     store.poll.map((r) => [esc(r.name), `${fmt(r.medianHz)} Hz`, `${fmt(r.averageHz)} Hz`, `${r.nearest} Hz`, `${fmt(r.stability * 100)}%`, `${fmt((r.dropRate ?? 0) * 100, 2)}%`, r.source]));
   if (q('switch-table')) q('switch-table').innerHTML = tableHtml([tr('device'), tr('dbMin'), tr('dbCps'), tr('susp'), tr('latMed')],
@@ -426,7 +448,8 @@ function renderTables() {
     return metric(`${esc(deviceName(d))} · ${tr('malBase')}`, fmt(r.baselineCounts, 0), 'counts')
       + metric(`${esc(deviceName(d))} · ${tr('malOk')}`, fmt(r.verifiedUpToIps, 1), tr('ips'), 'ok')
       + (r.reached ? metric(`${esc(deviceName(d))} · ${tr('malBad')}`, fmt(r.malfunctionIps, 1), tr('ips'), 'bad')
-        : metric(`${esc(deviceName(d))}`, '—', tr('malNot'), 'warn'));
+        : metric(`${esc(deviceName(d))}`, '—', tr('malNot'), 'warn'))
+      + (r.inconsistentRuns ? metric(`${esc(deviceName(d))}`, r.inconsistentRuns, tr('malLong'), 'warn') : '');
   }).join('');
   renderRepeats();
 }
@@ -527,14 +550,19 @@ function init() {
     stop(); if (!r) return;
     const cpi = lastCpi(); const a = computeSensor(r.samples, cpi);
     if (!a.enough) { $('curve-metrics').innerHTML = `<p class="hw-limit">${tr('notEnough')}</p>`; return; }
-    const sm = a.smoothing, smTxt = { raw: tr('smRaw'), mild: tr('smMild'), smoothed: tr('smSmoothed') }[sm.verdict] || '—';
+    const sm = a.smoothing;
+    const smTxt = { raw: tr('smRaw'), mild: tr('smMild'), smoothed: tr('smSmoothed') }[sm.verdict] || '—';
+    const smShort = { raw: tr('smRawS'), mild: tr('smMildS'), smoothed: tr('smSmoothedS') }[sm.verdict] || '—';
     $('curve-metrics').innerHTML =
-      metric(tr('smoothT'), smTxt.split('（')[0].split(' (')[0], smTxt, sm.verdict === 'smoothed' ? 'warn' : 'ok')
-      + metric(tr('roughT'), fmt(sm.roughness, 2), `${tr('smRaw').slice(0, 2)} > 0.35`)
+      metric(tr('smoothT'), smShort, smTxt, sm.verdict === 'smoothed' ? 'warn' : 'ok')
+      + metric(tr('roughT'), fmt(sm.roughness, 2), tr('roughScale'))
       + metric(tr('tailT'), fmt(a.tail.tailMs, 0), tr('tailUnit'), a.tail.tailMs > 12 ? 'warn' : 'ok')
       + metric(tr('spikes'), a.spikes, `${fmt(a.spikesPer1000, 1)} ${tr('per1000')}`, a.spikes ? 'bad' : 'ok')
       + metric(tr('rev'), a.reversals, `${fmt(a.reversalsPer1000, 1)} ${tr('per1000')}`, a.reversals ? 'warn' : 'ok')
-      + metric(tr('peak'), a.peakIps ? fmt(a.peakIps, 1) : fmt(a.peakCountsPerSecond), a.peakIps ? `${tr('ips')} · ${fmt(a.peakMetersPerSecond, 2)} m/s` : `counts/s · ${tr('needCpi')}`);
+      + (a.peakCountsPerSecond === null
+        ? metric(tr('peak'), '—', tr('noPeak'), 'warn')
+        : metric(tr('peak'), a.peakIps ? fmt(a.peakIps, 1) : fmt(a.peakCountsPerSecond),
+          a.peakIps ? `${tr('ips')} · ${fmt(a.peakMetersPerSecond, 2)} m/s` : `counts/s · ${tr('needCpi')}`, a.peakIps ? '' : 'warn'));
     const mags = r.samples.map((p) => Math.hypot(p.dx, p.dy));
     lastRaw.curve = { mags, rows: r.samples.map((p, i) => ({ index: i, timestampMs: +p.t.toFixed(4), dx: p.dx, dy: p.dy, magnitude: +mags[i].toFixed(3) })) };
     $('hw-raw').disabled = false; $('curve-fig').hidden = false; drawChart($('curve-chart'), mags, { spikes: true });
@@ -570,8 +598,8 @@ function init() {
       const a = computeAngleSnap(r.samples);
       if (!a.enough) { $('cal-metrics').innerHTML = `<p class="hw-limit">${tr('notEnough')}</p>`; return; }
       const vt = { none: tr('snNone'), suspect: tr('snSus'), snapping: tr('snYes') }[a.verdict];
-      $('cal-metrics').innerHTML = metric(tr('snapT'), vt.split('（')[0], `${tr('snapZero')} ${fmt(a.zeroYRatio * 100, 0)}%`, a.verdict === 'none' ? 'ok' : a.verdict === 'suspect' ? 'warn' : 'bad')
-        + metric(tr('snapZero'), fmt(a.zeroYRatio * 100, 0), `% · run ${a.longestZeroRun}`);
+      $('cal-metrics').innerHTML = metric(tr('snapT'), a.verdict === 'none' ? '✓' : a.verdict === 'suspect' ? '?' : '✗', vt, a.verdict === 'none' ? 'ok' : a.verdict === 'suspect' ? 'warn' : 'bad')
+        + metric(tr('snapZero'), fmt(a.zeroYRatio * 100, 0), `% · ${tr('snapRun')} ${a.longestZeroRun}`);
       rec('snap', { zeroYRatio: a.zeroYRatio, longestZeroRun: a.longestZeroRun, yPerX: a.yPerX, verdict: a.verdict, samples: a.samples });
       return;
     }
@@ -598,10 +626,13 @@ function init() {
     $('mal-pad').classList.remove('hw-armed');
     const r = await capture($('mal-pad'), { untilClick: true, onTick: (s) => { $('mal-count').textContent = String(Math.round(Math.abs(s.reduce((a, p) => a + p.dx, 0)))); } });
     $('mal-live').textContent = ''; if (!r) return;
-    const cpi = lastCpi(); const a = computeSensor(r.samples, cpi);
+    const cpi = lastCpi();
+    if (!cpi) { $('mal-metrics').innerHTML = `<p class="hw-limit">${tr('needCpiFirst')}</p>`; return; }
+    const a = computeSensor(r.samples, cpi);
     const counts = Math.abs(r.samples.reduce((x, p) => x + p.dx, 0));
     if (!a.enough || counts < 50) { $('mal-metrics').innerHTML = `<p class="hw-limit">${tr('notEnough')}</p>`; return; }
-    rec('mal', { counts, cm, peakIps: a.peakIps ?? a.peakCountsPerSecond / 800, peakCountsPerSecond: a.peakCountsPerSecond, cpi });
+    if (a.peakIps === null) { $('mal-metrics').innerHTML = `<p class="hw-limit">${tr('noPeak')}</p>`; return; }
+    rec('mal', { counts, cm, peakIps: a.peakIps, peakCountsPerSecond: a.peakCountsPerSecond, cpi });
   });
 
   // ---- polling + stability
@@ -621,12 +652,13 @@ function init() {
     $('poll-metrics').innerHTML = metric(tr('medianHz'), fmt(a.medianHz), 'Hz') + metric(tr('avgHz'), fmt(a.averageHz), 'Hz')
       + metric(tr('nearest'), a.nearest, 'Hz') + metric(tr('stab'), fmt(a.stability * 100), `% · ${RAW_TYPE}`)
       + metric(tr('drops'), fmt(a.dropRate * 100, 2), '%', a.dropRate > 0.01 ? 'warn' : 'ok')
-      + (setR ? metric(tr('vsSet'), setR === a.nearest ? '✓' : '✗', `${setR} Hz · ${setR === a.nearest ? tr('match') : tr('mismatch')}`, setR === a.nearest ? 'ok' : 'bad') : '');
+      + (setR && a.consistent ? metric(tr('vsSet'), setR === a.nearest ? '✓' : '✗', `${setR} Hz · ${setR === a.nearest ? tr('match') : tr('mismatch')}`, setR === a.nearest ? 'ok' : 'bad') : '')
+      + (a.consistent ? '' : metric(tr('agree'), fmt(a.agreement * 100, 0), `% · ${tr('unreliable')}`, 'bad'));
     const sorted = [...ts].sort((x, y) => x - y);
     const intervals = sorted.slice(1).map((t, i) => t - sorted[i]).filter((d) => d > 0 && d <= 25);
     lastRaw.poll = { intervals, median: a.medianIntervalMs, rows: sorted.map((t, i) => ({ index: i, timestampMs: +t.toFixed(4), intervalMs: i ? +(t - sorted[i - 1]).toFixed(4) : '' })) };
     $('hw-raw').disabled = false; $('poll-fig').hidden = false; drawChart($('poll-chart'), intervals, { medianLine: a.medianIntervalMs });
-    rec('poll', { medianHz: a.medianHz, averageHz: a.averageHz, nearest: a.nearest, stability: a.stability, dropRate: a.dropRate, drops: a.drops, samples: a.samples, source: RAW_TYPE });
+    rec('poll', { medianHz: a.medianHz, averageHz: a.averageHz, nearest: a.nearest, stability: a.stability, dropRate: a.dropRate, drops: a.drops, samples: a.samples, consistent: a.consistent, agreement: a.agreement, source: RAW_TYPE });
   });
   $('stab-start').addEventListener('click', async () => {
     const r = await runPolling('stability', $('poll-pad'), $('stab-live'), 30000, $('poll-count'));
@@ -635,11 +667,12 @@ function init() {
     if (!a.enough) { $('stab-metrics').innerHTML = `<p class="hw-limit">${tr('notEnough')}</p>`; return; }
     $('stab-metrics').innerHTML = metric(tr('medianHz'), fmt(a.activeMedianHz ?? a.medianHz), 'Hz')
       + metric(tr('dropouts'), a.dropoutCount, `${fmt(a.dropoutsPerMinute, 1)} / min`, a.dropoutCount ? 'bad' : 'ok')
-      + metric(tr('worstGap'), fmt(a.worstGapMs, 1), 'ms', a.worstGapMs > 8 ? 'warn' : 'ok')
+      + metric(tr('micro'), a.microStallCount, tr('microNote'))
+      + metric(tr('worstGap'), fmt(a.worstGapMs, 1), 'ms', a.worstGapMs > 25 ? 'warn' : 'ok')
       + metric(tr('lost'), a.lostReports, 'reports', a.lostReports > 20 ? 'warn' : 'ok');
     lastRaw.stability = { hz: a.buckets.map((b) => b.hz), spanMs: a.spanMs, rows: a.buckets.map((b) => ({ atMs: Math.round(b.atMs), hz: +b.hz.toFixed(1) })) };
     $('stab-fig').hidden = false; drawChart($('stab-chart'), lastRaw.stability.hz, { bars: true, xLabel: `${fmt(a.spanMs / 1000, 1)} s` });
-    rec('stability', { medianHz: a.activeMedianHz ?? a.medianHz, dropoutCount: a.dropoutCount, dropoutsPerMinute: a.dropoutsPerMinute, worstGapMs: a.worstGapMs, lostReports: a.lostReports, spanMs: Math.round(a.spanMs) });
+    rec('stability', { medianHz: a.activeMedianHz ?? a.medianHz, dropoutCount: a.dropoutCount, microStallCount: a.microStallCount, dropoutsPerMinute: a.dropoutsPerMinute, worstGapMs: a.worstGapMs, lostReports: a.lostReports, spanMs: Math.round(a.spanMs) });
   });
 
   // ---- switch: debounce
