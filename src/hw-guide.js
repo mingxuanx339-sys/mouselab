@@ -177,7 +177,8 @@ function init() {
   exitBtn = document.createElement('button'); exitBtn.type = 'button'; exitBtn.className = 'button button-primary pad-exit'; exitBtn.hidden = true;
   exitBtn.addEventListener('click', unzoom); document.body.append(exitBtn);
   addZoom(document.getElementById('test-area'));
-  sec.querySelectorAll('.hw-pad').forEach(addZoom);
+  document.querySelectorAll('.hw-pad').forEach(addZoom);
+  document.addEventListener('mouselab:pads', (e) => { e.detail.forEach(addZoom); render(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && zoomed && !document.pointerLockElement) unzoom(); });
   document.addEventListener('pointerlockchange', () => { if (zoomed) zoomed.dataset.locked = document.pointerLockElement ? '1' : ''; });
   document.getElementById('lang-select')?.addEventListener('change', () => setTimeout(render, 0));

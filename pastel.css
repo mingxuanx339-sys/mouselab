@@ -291,3 +291,13 @@ body.has-pad-max .guide { display: none; }
 .hw-subh { margin: 18px 0 6px; font-size: 15px; color: #7a3b68; }
 .hw-table { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; } .hw-panel, .hw-panels { min-width: 0; }
 .hw-pass table { min-width: 0; }
+/* ---- reaction test ---- */
+.react-pad { cursor: pointer; min-height: clamp(280px, 40vh, 460px); transition: background-color .05s; }
+.react-pad[data-state="wait"] { background: #e2485f; border-color: #c0304a; }
+.react-pad[data-state="go"] { background: #3fcf8e; border-color: #23885a; }
+.react-pad[data-state="early"] { background: #ffd27a; }
+.react-pad[data-state="wait"] strong, .react-pad[data-state="wait"] span, .react-pad[data-state="go"] strong, .react-pad[data-state="go"] span { color: #fff; }
+.react-trail { font-family: var(--display); letter-spacing: .05em; }
+.react-notes { margin: 0; padding: 0 18px 14px 34px; font-size: 13px; line-height: 1.6; color: #5d3f55; }
+.react-notes li + li { margin-top: 6px; }
+.react-verdict { grid-column: 1 / -1; }
